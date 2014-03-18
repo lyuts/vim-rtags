@@ -41,6 +41,40 @@ function rtags#CreateProject()
 
 endfunction
 
+"
+" param[in] results - List of locations, one per line
+"
+" Format of each line: <path>,<line>\s<text>
+function rtags#DisplayResults(results)
+    let locations = []
+    let nr = 1
+    for record in a:results
+        let [location; rest] = split(record, '\s\+')
+        let file = split(location, ',')[0]
+        let offset = str2nr(split(location, ',')[1])
+
+        let cursor_pos = Offset2LineCol(file, offset)
+
+        let entry = {}
+"        let entry.bufn = 0
+        let entry.filename = substitute(file, getcwd().'/', '', 'g')
+        let entry.lnum = cursor_pos[0]
+"        let entry.pattern = ''
+        let entry.col = cursor_pos[1]
+        let entry.vcol = 0
+"        let entry.nr = nr
+        let entry.text = join(rest, ' ')
+        let entry.type = 'ref'
+
+        call add(locations, entry)
+
+        let nr = nr + 1
+    endfor
+
+    call setloclist(winnr(), locations)
+    lopen
+endfunction
+
 function rtags#SymbolInfo()
     let cmd = printf("%s -U %s,%s", g:rcCmd, expand("%"), LineCol2Offset())
     exe "!".cmd
@@ -63,67 +97,13 @@ endfunction
 function rtags#FindRefs()
     let cmd = printf("%s -er %s,%s", g:rcCmd, expand("%"), LineCol2Offset())
     let result = split(system(cmd), '\n\+')
-
-    let locations = []
-    let nr = 1
-    for record in result
-        let [location; rest] = split(record, '\s\+')
-        let file = split(location, ',')[0]
-        let offset = str2nr(split(location, ',')[1])
-
-        let cursor_pos = Offset2LineCol(file, offset)
-
-        let entry = {}
-"        let entry.bufn = 0
-        let entry.filename = substitute(file, getcwd().'/', '', 'g')
-        let entry.lnum = cursor_pos[0]
-"        let entry.pattern = ''
-        let entry.col = cursor_pos[1]
-        let entry.vcol = 0
-"        let entry.nr = nr
-        let entry.text = join(rest, ' ')
-        let entry.type = 'ref'
-
-        call add(locations, entry)
-
-        let nr = nr + 1
-    endfor
-
-    call setloclist(winnr(), locations)
-    lopen
+    call rtags#DisplayResults(result)
 endfunction
 
 function rtags#FindRefsByName(name)
     let cmd = printf("%s -eR %s", g:rcCmd, a:name)
     let result = split(system(cmd), '\n\+')
-
-    let locations = []
-    let nr = 1
-    for record in result
-        let [location; rest] = split(record, '\s\+')
-        let file = split(location, ',')[0]
-        let offset = str2nr(split(location, ',')[1])
-
-        let cursor_pos = Offset2LineCol(file, offset)
-
-        let entry = {}
-"        let entry.bufn = 0
-        let entry.filename = substitute(file, getcwd().'/', '', 'g')
-        let entry.lnum = cursor_pos[0]
-"        let entry.pattern = ''
-        let entry.col = cursor_pos[1]
-        let entry.vcol = 0
-"        let entry.nr = nr
-        let entry.text = join(rest, ' ')
-        let entry.type = 'ref'
-
-        call add(locations, entry)
-
-        let nr = nr + 1
-    endfor
-
-    call setloclist(winnr(), locations)
-    lopen
+    call rtags#DisplayResults(result)
 endfunction
 
 """ rc -HF <pattern>
@@ -135,32 +115,5 @@ function rtags#FindSymbols(pattern, excludeSysHeaders)
 
     let cmd = printf("%s -%s %s", g:rcCmd, flags, a:pattern)
     let result = split(system(cmd), '\n\+')
-
-    let locations = []
-    let nr = 1
-    for record in result
-        let [location; rest] = split(record, '\s\+')
-        let file = split(location, ',')[0]
-        let offset = str2nr(split(location, ',')[1])
-
-        let cursor_pos = Offset2LineCol(file, offset)
-
-        let entry = {}
-"        let entry.bufn = 0
-        let entry.filename = substitute(file, getcwd().'/', '', 'g')
-        let entry.lnum = cursor_pos[0]
-"        let entry.pattern = ''
-        let entry.col = cursor_pos[1]
-        let entry.vcol = 0
-"        let entry.nr = nr
-        let entry.text = join(rest, ' ')
-        let entry.type = 'ref'
-
-        call add(locations, entry)
-
-        let nr = nr + 1
-    endfor
-
-    call setloclist(winnr(), locations)
-    lopen
+    call rtags#DisplayResults(result)
 endfunction
