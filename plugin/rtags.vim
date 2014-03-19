@@ -5,6 +5,13 @@ endif
 
 let g:rcCmd = "rc"
 
+
+noremap 1 :call rtags#SymbolInfo()<CR>
+noremap 2 :call rtags#JumpTo()<CR>
+noremap 3 :call rtags#FindRefs()<CR>
+noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
+noremap 5 :call rtags#FindSymbols(input("Pattern? "), 0)<CR>
+
 " LineCol2Offset {{{
 " return Byte offset in the file for the current cursor position
 function LineCol2Offset()
