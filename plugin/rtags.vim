@@ -11,6 +11,7 @@ noremap 2 :call rtags#JumpTo()<CR>
 noremap 3 :call rtags#FindRefs()<CR>
 noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
 noremap 5 :call rtags#FindSymbols(input("Pattern? "), 0)<CR>
+noremap 6 :call rtags#CompleteAtCursor()<CR>
 
 " LineCol2Offset {{{
 " return Byte offset in the file for the current cursor position
@@ -124,3 +125,54 @@ function rtags#FindSymbols(pattern, excludeSysHeaders)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
 endfunction
+
+function rtags#CompleteAtCursor()
+    let flags = "--synchronous-completions -l"
+    let file = expand("%:p")
+    let pos = getpos('.')
+    let line = pos[1]
+    let col = pos[2]
+    
+    let cmd = printf("%s %s %s:%s:%s", g:rcCmd, flags, file, line, col)
+    let result = split(system(cmd), '\n\+')
+    return result
+"    for r in result
+"        echo r
+"    endfor
+"    call rtags#DisplayResults(result)
+endfunction
+
+function RtagsCompleteFunc(findstart, base)
+    echomsg "RtagsCompleteFunc: ".a:base
+    if a:findstart
+        " todo: find word start
+        exec "normal \<Esc>" 
+        let cword = expand("<cword>")
+        exec "startinsert!"
+        echomsg cword
+        return strridx(getline(line('.')), cword)
+    else
+        
+        let completeopts = rtags#CompleteAtCursor()
+        let a = []
+            for line in completeopts
+                let option = split(line)
+                if a:base != "" && stridx(option[0], a:base) != 0
+                    continue
+                endif
+                let match = {}
+                let match.word = option[0]
+                let match.kind = option[len(option) - 1]
+                if match.kind == "CXXMethod"
+                    let match.word = match.word.'('
+                endif
+                let match.menu = join(option[1:len(option) - 1], ' ')
+                call add(a, match)
+            endfor
+        return a
+    endif
+endfunction
+
+
+set completefunc=RtagsCompleteFunc
+
