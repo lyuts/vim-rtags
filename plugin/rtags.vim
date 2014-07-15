@@ -111,6 +111,13 @@ function! rtags#FindRefsByName(name)
     call rtags#DisplayResults(result)
 endfunction
 
+" Find all those references which has the name which is equal to the word
+" under the cursor
+function! rtags#FindRefsOfWordUnderCursor()
+	let wordUnderCursor = expand("<cword>")
+	call rtags#FindRefsByName(wordUnderCursor)
+endfunction
+
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern, excludeSysHeaders)
     let flags = "F"
@@ -121,6 +128,11 @@ function! rtags#FindSymbols(pattern, excludeSysHeaders)
     let cmd = printf("%s -%s %s", g:rcCmd, flags, a:pattern)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
+endfunction
+
+function! rtags#FindSymbolsOfWordUnderCursor(excludeSysHeaders)
+	let wordUnderCursor = expand("<cword>")
+	call rtags#FindSymbols(wordUnderCursor, a:excludeSysHeaders)
 endfunction
 
 function! rtags#CompleteAtCursor()
