@@ -15,7 +15,7 @@ noremap 6 :call rtags#CompleteAtCursor()<CR>
 
 " LineCol2Offset {{{
 " return Byte offset in the file for the current cursor position
-function LineCol2Offset()
+function! LineCol2Offset()
     return line2byte('.') + col('.') - 1
 endfunction
 " }}}
@@ -24,7 +24,7 @@ endfunction
 " param filepath - fullpath to a file
 " param offset - byte offset in the file
 " returns [ line #, column # ]
-function Offset2LineCol(filepath, offset)
+function! Offset2LineCol(filepath, offset)
 python << endscript
 import vim
 f = open(vim.eval("a:filepath"))
@@ -45,7 +45,7 @@ endscript
 endfunction
 " }}}
 
-function rtags#CreateProject()
+function! rtags#CreateProject()
 
 endfunction
 
@@ -53,22 +53,19 @@ endfunction
 " param[in] results - List of locations, one per line
 "
 " Format of each line: <path>,<line>\s<text>
-function rtags#DisplayResults(results)
+function! rtags#DisplayResults(results)
     let locations = []
     let nr = 1
     for record in a:results
         let [location; rest] = split(record, '\s\+')
-        let file = split(location, ',')[0]
-        let offset = str2nr(split(location, ',')[1])
-
-        let cursor_pos = Offset2LineCol(file, offset)
+        let [file, lnum, col; blank] = split(location, ':')
 
         let entry = {}
 "        let entry.bufn = 0
         let entry.filename = substitute(file, getcwd().'/', '', 'g')
-        let entry.lnum = cursor_pos[0]
+        let entry.lnum = lnum
 "        let entry.pattern = ''
-        let entry.col = cursor_pos[1]
+        let entry.col = col
         let entry.vcol = 0
 "        let entry.nr = nr
         let entry.text = join(rest, ' ')
@@ -83,39 +80,39 @@ function rtags#DisplayResults(results)
     lopen
 endfunction
 
-function rtags#SymbolInfo()
-    let cmd = printf("%s -U %s,%s", g:rcCmd, expand("%"), LineCol2Offset())
+function! rtags#SymbolInfo()
+    let [lnum, col] = getpos('.')[1:2]
+    let cmd = printf("%s -U %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
     exe "!".cmd
 endfunction
 
-function rtags#JumpTo()
-    let cmd = printf("%s -f %s,%s", g:rcCmd, expand("%"), LineCol2Offset())
+function! rtags#JumpTo()
+    let [lnum, col] = getpos('.')[1:2]
+    let cmd = printf("%s -f %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
     let [location; symbol_detail] = split(system(cmd), '\s\+')
-    let jump_location = split(location, ',')
-    let jump_file = jump_location[0]
-    let jump_byte_offset = jump_location[1]
+    let [jump_file, lnum, col; rest] = split(location, ':')
 
     if jump_file != expand("%:p")
-        exe "e +".jump_byte_offset."go ".jump_file
-    else
-        exe jump_byte_offset."go"
+        exe "e ".jump_file
     endif
+    call cursor(lnum, col)
 endfunction
 
-function rtags#FindRefs()
-    let cmd = printf("%s -er %s,%s", g:rcCmd, expand("%"), LineCol2Offset())
+function! rtags#FindRefs()
+    let [lnum, col] = getpos('.')[1:2]
+    let cmd = printf("%s -er %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
 endfunction
 
-function rtags#FindRefsByName(name)
+function! rtags#FindRefsByName(name)
     let cmd = printf("%s -eR %s", g:rcCmd, a:name)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
 endfunction
 
 """ rc -HF <pattern>
-function rtags#FindSymbols(pattern, excludeSysHeaders)
+function! rtags#FindSymbols(pattern, excludeSysHeaders)
     let flags = "F"
     if a:excludeSysHeaders == 1
         let flags = "H".flags
@@ -126,7 +123,7 @@ function rtags#FindSymbols(pattern, excludeSysHeaders)
     call rtags#DisplayResults(result)
 endfunction
 
-function rtags#CompleteAtCursor()
+function! rtags#CompleteAtCursor()
     let flags = "--synchronous-completions -l"
     let file = expand("%:p")
     let pos = getpos('.')
@@ -142,7 +139,7 @@ function rtags#CompleteAtCursor()
 "    call rtags#DisplayResults(result)
 endfunction
 
-function RtagsCompleteFunc(findstart, base)
+function! RtagsCompleteFunc(findstart, base)
     echomsg "RtagsCompleteFunc: ".a:base
     if a:findstart
         " todo: find word start
