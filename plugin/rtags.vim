@@ -56,10 +56,10 @@ function! rtags#CreateProject()
 endfunction
 
 "
-" param[in] results - List of locations, one per line
+" param[in] results - List of found locations by rc
+" return locations - List of locations dict's recognizable by setloclist
 "
-" Format of each line: <path>,<line>\s<text>
-function! rtags#DisplayResults(results)
+function! rtags#ParseResults(results)
     let locations = []
     let nr = 1
     for record in a:results
@@ -81,7 +81,15 @@ function! rtags#DisplayResults(results)
 
         let nr = nr + 1
     endfor
+    return locations
+endfunction
 
+"
+" param[in] results - List of locations, one per line
+"
+" Format of each line: <path>,<line>\s<text>
+function! rtags#DisplayResults(results)
+    let locations = rtags#ParseResults(results)
     call setloclist(winnr(), locations)
     lopen
 endfunction
@@ -200,3 +208,14 @@ endfunction
 
 set completefunc=RtagsCompleteFunc
 
+" Helpers to access script locals for unit testing {{{
+function! s:get_SID()
+    return matchstr(expand('<sfile>'), '<SNR>\d\+_')
+endfunction
+let s:SID = s:get_SID()
+delfunction s:get_SID
+
+function! rtags#__context__()
+    return { 'sid': s:SID, 'scope': s: }
+endfunction
+"}}}
