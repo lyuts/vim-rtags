@@ -6,12 +6,18 @@ endif
 let g:rcCmd = "rc"
 let g:excludeSysHeaders = 0
 
-noremap 1 :call rtags#SymbolInfo()<CR>
-noremap 2 :call rtags#JumpTo()<CR>
-noremap 3 :call rtags#FindRefs()<CR>
-noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
-noremap 5 :call rtags#FindSymbols(input("Pattern? "))<CR>
-noremap 6 :call rtags#CompleteAtCursor()<CR>
+if !has("g:rtagsUseDefaultMappings")
+    let g:rtagsUseDefaultMappings = 1
+endif
+
+if g:rtagsUseDefaultMappings == 1
+    noremap 1 :call rtags#SymbolInfo()<CR>
+    noremap 2 :call rtags#JumpTo()<CR>
+    noremap 3 :call rtags#FindRefs()<CR>
+    noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
+    noremap 5 :call rtags#FindSymbols(input("Pattern? "))<CR>
+    noremap 6 :call rtags#CompleteAtCursor()<CR>
+endif
 
 " LineCol2Offset {{{
 " return Byte offset in the file for the current cursor position
