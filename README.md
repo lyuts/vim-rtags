@@ -9,4 +9,3 @@ https://github.com/Andersbakken/rtags
 
 # Notes
 1. This plugin is wip.
-2. Doesn't provide any key mappings at this point.
