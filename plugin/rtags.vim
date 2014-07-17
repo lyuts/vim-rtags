@@ -4,13 +4,13 @@ if !has("python")
 endif
 
 let g:rcCmd = "rc"
-
+let g:excludeSysHeaders = 0
 
 noremap 1 :call rtags#SymbolInfo()<CR>
 noremap 2 :call rtags#JumpTo()<CR>
 noremap 3 :call rtags#FindRefs()<CR>
 noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
-noremap 5 :call rtags#FindSymbols(input("Pattern? "), 0)<CR>
+noremap 5 :call rtags#FindSymbols(input("Pattern? "))<CR>
 noremap 6 :call rtags#CompleteAtCursor()<CR>
 
 " LineCol2Offset {{{
@@ -80,15 +80,24 @@ function! rtags#DisplayResults(results)
     lopen
 endfunction
 
+function! rtags#getRcCmd()
+    if g:excludeSysHeaders == 1
+		return g:rcCmd." -H "
+    endif
+	return g:rcCmd
+endfunction
+
 function! rtags#SymbolInfo()
     let [lnum, col] = getpos('.')[1:2]
-    let cmd = printf("%s -U %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -U %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
     exe "!".cmd
 endfunction
 
 function! rtags#JumpTo()
     let [lnum, col] = getpos('.')[1:2]
-    let cmd = printf("%s -f %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -f %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
     let [location; symbol_detail] = split(system(cmd), '\s\+')
     let [jump_file, lnum, col; rest] = split(location, ':')
 
@@ -100,27 +109,38 @@ endfunction
 
 function! rtags#FindRefs()
     let [lnum, col] = getpos('.')[1:2]
-    let cmd = printf("%s -er %s:%s:%s", g:rcCmd, expand("%"), lnum, col)
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -er %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
 endfunction
 
 function! rtags#FindRefsByName(name)
-    let cmd = printf("%s -eR %s", g:rcCmd, a:name)
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -eR %s", rcRealCmd, a:name)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
 endfunction
 
-""" rc -HF <pattern>
-function! rtags#FindSymbols(pattern, excludeSysHeaders)
-    let flags = "F"
-    if a:excludeSysHeaders == 1
-        let flags = "H".flags
-    endif
+" Find all those references which has the name which is equal to the word
+" under the cursor
+function! rtags#FindRefsOfWordUnderCursor()
+	let wordUnderCursor = expand("<cword>")
+	call rtags#FindRefsByName(wordUnderCursor)
+endfunction
 
-    let cmd = printf("%s -%s %s", g:rcCmd, flags, a:pattern)
+""" rc -HF <pattern>
+function! rtags#FindSymbols(pattern)
+    let flags = "F"
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
     let result = split(system(cmd), '\n\+')
     call rtags#DisplayResults(result)
+endfunction
+
+function! rtags#FindSymbolsOfWordUnderCursor()
+	let wordUnderCursor = expand("<cword>")
+	call rtags#FindSymbols(wordUnderCursor)
 endfunction
 
 function! rtags#CompleteAtCursor()
@@ -130,7 +150,8 @@ function! rtags#CompleteAtCursor()
     let line = pos[1]
     let col = pos[2]
     
-    let cmd = printf("%s %s %s:%s:%s", g:rcCmd, flags, file, line, col)
+	let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s %s %s:%s:%s", rcRealCmd, flags, file, line, col)
     let result = split(system(cmd), '\n\+')
     return result
 "    for r in result
