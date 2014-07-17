@@ -11,11 +11,11 @@ if !has("g:rtagsUseDefaultMappings")
 endif
 
 if g:rtagsUseDefaultMappings == 1
-    noremap 1 :call rtags#SymbolInfo()<CR>
-    noremap 2 :call rtags#JumpTo()<CR>
-    noremap 3 :call rtags#FindRefs()<CR>
-    noremap 4 :call rtags#FindRefsByName(input("Pattern? ")<CR>
-    noremap 5 :call rtags#FindSymbols(input("Pattern? "))<CR>
+    noremap <Leader>ri :call rtags#SymbolInfo()<CR>
+    noremap <Leader>rj :call rtags#JumpTo()<CR>
+    noremap <Leader>rf :call rtags#FindRefs()<CR>
+    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
+    noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
     noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
