@@ -89,7 +89,7 @@ endfunction
 "
 " Format of each line: <path>,<line>\s<text>
 function! rtags#DisplayResults(results)
-    let locations = rtags#ParseResults(results)
+    let locations = rtags#ParseResults(a:results)
     call setloclist(winnr(), locations)
     lopen
 endfunction
