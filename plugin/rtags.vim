@@ -152,6 +152,27 @@ function! rtags#FindSymbols(pattern)
     call rtags#DisplayResults(result)
 endfunction
 
+function! rtags#ProjectsList()
+    let flags = "w"
+    let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -%s", rcRealCmd, flags)
+    exe "!".cmd
+endfunction
+
+function! rtags#ProjectOpen(pattern)
+    let flags = "w"
+    let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
+    let retcode = system(cmd)
+endfunction
+
+function! rtags#ProjectClose(pattern)
+    let flags = "u"
+    let rcRealCmd = rtags#getRcCmd()
+    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
+    let retcode = system(cmd)
+endfunction
+
 function! rtags#FindSymbolsOfWordUnderCursor()
 	let wordUnderCursor = expand("<cword>")
 	call rtags#FindSymbols(wordUnderCursor)
