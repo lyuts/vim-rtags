@@ -51,6 +51,27 @@ endscript
 endfunction
 " }}}
 
+"
+" Executes rc with given arguments and returns rc output
+"
+" param[in] args - dictionary of arguments
+"
+" return output split by newline
+function! rtags#ExecuteRC(args)
+    let cmd = rtags#getRcCmd()
+    for [key, value] in items(a:args)
+        let cmd .= " -".key
+
+        if len(value) > 1
+            let cmd .= " ".value
+        endif
+    endfor
+    
+    let output = split(system(cmd), '\n\+')
+
+    return output
+endfunction
+
 function! rtags#CreateProject()
 
 endfunction
@@ -102,37 +123,48 @@ function! rtags#getRcCmd()
 endfunction
 
 function! rtags#SymbolInfo()
+    let args = {}
     let [lnum, col] = getpos('.')[1:2]
-	let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -U %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
-    exe "!".cmd
+    let args.U = printf("%s:%s:%s", expand("%"), lnum, col)
+    let output = rtags#ExecuteRC(args)
+    for line in output
+        echo line
+    endfor
 endfunction
 
 function! rtags#JumpTo()
+    let args = {}
     let [lnum, col] = getpos('.')[1:2]
-	let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -f %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
-    let [location; symbol_detail] = split(system(cmd), '\s\+')
-    let [jump_file, lnum, col; rest] = split(location, ':')
+    let args.f = printf("%s:%s:%s", expand("%"), lnum, col)
+    let results = rtags#ExecuteRC(args)
+    
+    if len(results) > 1
+        call rtags#DisplayResults(results)
+    elseif len(results) == 1
+        let [location; symbol_detail] = split(results[0], '\s\+')
+        let [jump_file, lnum, col; rest] = split(location, ':')
 
-    if jump_file != expand("%:p")
-        exe "e ".jump_file
+        if jump_file != expand("%:p")
+            exe "e ".jump_file
+        endif
+        call cursor(lnum, col)
+        normal zz
     endif
-    call cursor(lnum, col)
 endfunction
 
 function! rtags#FindRefs()
+    let args = {}
+    let args.e = ''
+
     let [lnum, col] = getpos('.')[1:2]
-	let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -er %s:%s:%s", rcRealCmd, expand("%"), lnum, col)
-    let result = split(system(cmd), '\n\+')
+    let args.r = printf("%s:%s:%s", expand("%"), lnum, col)
+
+    let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
 function! rtags#FindRefsByName(name)
-	let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -eR %s", rcRealCmd, a:name)
-    let result = split(system(cmd), '\n\+')
+    let result = rtags#ExecuteRC({ 'e' : '', 'R' : a:name })
     call rtags#DisplayResults(result)
 endfunction
 
@@ -145,32 +177,22 @@ endfunction
 
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern)
-    let flags = "F"
-	let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
-    let result = split(system(cmd), '\n\+')
+    let result = rtags#ExecuteRC({ 'F' : a:pattern })
     call rtags#DisplayResults(result)
 endfunction
 
-function! rtags#ProjectsList()
-    let flags = "w"
-    let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -%s", rcRealCmd, flags)
-    exe "!".cmd
+function! rtags#ProjectList()
+    for line in  rtags#ExecuteRC({'w' : ''})
+        echo line
+    endfor
 endfunction
 
 function! rtags#ProjectOpen(pattern)
-    let flags = "w"
-    let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
-    let retcode = system(cmd)
+    call rtags#ExecuteRC({ 'w' : a:pattern })
 endfunction
 
 function! rtags#ProjectClose(pattern)
-    let flags = "u"
-    let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s -%s %s", rcRealCmd, flags, a:pattern)
-    let retcode = system(cmd)
+    call rtags#ExecuteRC({ 'u' : a:pattern })
 endfunction
 
 function! rtags#FindSymbolsOfWordUnderCursor()
