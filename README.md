@@ -12,5 +12,7 @@ https://github.com/Andersbakken/rtags
 1. Code completion with rtags is not done yet.
 
 # Development
+Unit tests for some plugin functions can be found in ```tests``` directory.
+To run tests, execute:
 
     $ vim tests/test_rtags.vim +UnitTest
