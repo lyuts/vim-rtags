@@ -11,12 +11,26 @@ https://github.com/Andersbakken/rtags
 ## Vundle
 Add the following line to ```.vimrc```
 
-    Plugin 'scrooloose/nerdtree'
+    Plugin 'lyuts/vim-rtags'
 
 then while in vim run:
 
     :source %
     :PluginInstall
+
+## NeoBundle
+Add the following line to ```.vimrc```
+
+    NeoBundle 'lyuts/vim-rtags'
+
+then while in vim run:
+
+    :source %
+    :NeoBundleInstall
+
+## Pathogen
+    $ cd ~/.vim/bundle
+    $ git clone https://github.com/scrooloose/nerdtree
 
 # Configuration
 This plugin interacts with RTags by invoking ```rc``` commands and interpreting
