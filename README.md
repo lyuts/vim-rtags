@@ -8,6 +8,12 @@ https://github.com/Andersbakken/rtags
 1. Vim built with ```+python```.
 
 # Installation
+## Vundle
+Add the following line to ```.vimrc```
+    Plugin 'scrooloose/nerdtree'
+then while in vim run:
+    :source %
+    :PluginInstall
 
 # Configuration
 This plugin interacts with RTags by invoking ```rc``` commands and interpreting
