@@ -9,3 +9,7 @@ https://github.com/Andersbakken/rtags
 
 # Notes
 1. This plugin is wip.
+
+# Development
+
+    $ vim tests/test_rtags.vim +UnitTest
