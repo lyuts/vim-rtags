@@ -10,8 +10,11 @@ https://github.com/Andersbakken/rtags
 # Installation
 ## Vundle
 Add the following line to ```.vimrc```
+
     Plugin 'scrooloose/nerdtree'
+
 then while in vim run:
+
     :source %
     :PluginInstall
 
