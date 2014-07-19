@@ -8,8 +8,8 @@ https://github.com/Andersbakken/rtags
 1. Vim built with +python.
 
 # Notes
-* This plugin is wip.
-* Code completion with rtags is not done yet.
+1. This plugin is wip.
+1. Code completion with rtags is not done yet.
 
 # Development
 
