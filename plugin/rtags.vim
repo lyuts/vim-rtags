@@ -17,6 +17,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rf :call rtags#FindRefs()<CR>
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
+    noremap <Leader>rr :call rtags#ReindexFile()<CR>
     noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
@@ -242,6 +243,10 @@ endfunction
 
 function! rtags#ProjectClose(pattern)
     call rtags#ExecuteRC({ 'u' : a:pattern })
+endfunction
+
+function! rtags#ReindexFile()
+    call rtags#ExecuteRC({ 'V' : expand("%:p") })
 endfunction
 
 function! rtags#FindSymbolsOfWordUnderCursor()
