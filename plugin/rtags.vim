@@ -151,11 +151,11 @@ function! rtags#JumpTo()
         let [location; symbol_detail] = split(results[0], '\s\+')
         let [jump_file, lnum, col; rest] = split(location, ':')
 
+        " Add location to the jumplist
+        normal m'
         if jump_file != expand("%:p")
             exe "e ".jump_file
         endif
-        " Add location to the jumplist
-        normal m'
         call cursor(lnum, col)
         normal zz
     endif
@@ -190,12 +190,11 @@ function! rtags#JumpToParent()
         if parentSeparatorPassed == 1
             let [jump_file, lnum, col] = rtags#parseSourceLocation(line)
             if !empty(jump_file)
-                echo jump_file.":".lnum
+                " Add location to the jumplist
+                normal m'
                 if jump_file != expand("%:p")
                     exe "e ".jump_file
                 endif
-                " Add location to the jumplist
-                normal m'
                 call cursor(lnum, col)
                 normal zz
                 return
