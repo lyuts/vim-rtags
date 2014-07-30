@@ -13,6 +13,7 @@ endif
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
+    noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
@@ -55,20 +56,25 @@ endfunction
 " Executes rc with given arguments and returns rc output
 "
 " param[in] args - dictionary of arguments
-"
+" param[in] ...
+"   param a:1 - list of long arguments (e.g. --cursorinfo-include-parents)
+"-
 " return output split by newline
-function! rtags#ExecuteRC(args)
+function! rtags#ExecuteRC(args, ...)
     let cmd = rtags#getRcCmd()
+    if a:0 > 0
+        let longArgs = a:1
+        for longArg in longArgs
+            let cmd .= " --".longArg." "
+        endfor
+    endif
     for [key, value] in items(a:args)
         let cmd .= " -".key
-
         if len(value) > 1
             let cmd .= " ".value
         endif
     endfor
-    
     let output = split(system(cmd), '\n\+')
-
     return output
 endfunction
 
@@ -117,9 +123,9 @@ endfunction
 
 function! rtags#getRcCmd()
     if g:excludeSysHeaders == 1
-		return g:rcCmd." -H "
+        return g:rcCmd." -H "
     endif
-	return g:rcCmd
+    return g:rcCmd
 endfunction
 
 function! rtags#SymbolInfo()
@@ -152,6 +158,49 @@ function! rtags#JumpTo()
     endif
 endfunction
 
+function! rtags#parseSourceLocation(string)
+    let [location; symbol_detail] = split(a:string, '\s\+')
+    let splittedLine = split(location, ':')
+    if len(splittedLine) == 3
+        let [jump_file, lnum, col; rest] = splittedLine
+        " Must be a path, therefore leading / is compulsory
+        if jump_file[0] == '/'
+            return [jump_file, lnum, col]
+        endif
+    endif
+    return ["","",""]
+endfunction
+
+function! rtags#JumpToParent()
+    let args = {}
+    let [lnum, col] = getpos('.')[1:2]
+    let args.U = printf("%s:%s:%s", expand("%"), lnum, col)
+    let longArgs = ["cursorinfo-include-parents"]
+    let results = rtags#ExecuteRC(args, longArgs)
+
+    let parentSeparator = "===================="
+    let parentSeparatorPassed = 0
+    for line in results
+        if line == parentSeparator
+            let parentSeparatorPassed = 1
+        endif
+        if parentSeparatorPassed == 1
+            let [jump_file, lnum, col] = rtags#parseSourceLocation(line)
+            if !empty(jump_file)
+                echo jump_file.":".lnum
+                if jump_file != expand("%:p")
+                    exe "e ".jump_file
+                endif
+                " Add location to the jumplist
+                normal m'
+                call cursor(lnum, col)
+                normal zz
+                return
+            endif
+        endif
+    endfor
+endfunction
+
 function! rtags#FindRefs()
     let args = {}
     let args.e = ''
@@ -171,8 +220,8 @@ endfunction
 " Find all those references which has the name which is equal to the word
 " under the cursor
 function! rtags#FindRefsOfWordUnderCursor()
-	let wordUnderCursor = expand("<cword>")
-	call rtags#FindRefsByName(wordUnderCursor)
+    let wordUnderCursor = expand("<cword>")
+    call rtags#FindRefsByName(wordUnderCursor)
 endfunction
 
 """ rc -HF <pattern>
@@ -196,8 +245,8 @@ function! rtags#ProjectClose(pattern)
 endfunction
 
 function! rtags#FindSymbolsOfWordUnderCursor()
-	let wordUnderCursor = expand("<cword>")
-	call rtags#FindSymbols(wordUnderCursor)
+    let wordUnderCursor = expand("<cword>")
+    call rtags#FindSymbols(wordUnderCursor)
 endfunction
 
 function! rtags#CompleteAtCursor()
@@ -207,7 +256,7 @@ function! rtags#CompleteAtCursor()
     let line = pos[1]
     let col = pos[2]
     
-	let rcRealCmd = rtags#getRcCmd()
+    let rcRealCmd = rtags#getRcCmd()
     let cmd = printf("%s %s %s:%s:%s", rcRealCmd, flags, file, line, col)
     let result = split(system(cmd), '\n\+')
     return result
