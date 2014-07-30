@@ -154,6 +154,8 @@ function! rtags#JumpTo()
         if jump_file != expand("%:p")
             exe "e ".jump_file
         endif
+        " Add location to the jumplist
+        normal m'
         call cursor(lnum, col)
         normal zz
     endif
