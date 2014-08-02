@@ -92,7 +92,7 @@ function! rtags#ParseResults(results)
     let nr = 1
     for record in a:results
         let [location; rest] = split(record, '\s\+')
-        let [file, lnum, col; blank] = split(location, ':')
+        let [file, lnum, col] = rtags#parseSourceLocation(location)
 
         let entry = {}
 "        let entry.bufn = 0
