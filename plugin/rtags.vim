@@ -304,7 +304,9 @@ function! RtagsCompleteFunc(findstart, base)
 endfunction
 
 
-set completefunc=RtagsCompleteFunc
+if (!exists('&completefunc'))
+  set completefunc=RtagsCompleteFunc
+endif
 
 " Helpers to access script locals for unit testing {{{
 function! s:get_SID()
