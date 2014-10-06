@@ -303,9 +303,8 @@ function! RtagsCompleteFunc(findstart, base)
     endif
 endfunction
 
-
-if (!exists('&completefunc'))
-  set completefunc=RtagsCompleteFunc
+if &completefunc == ""
+    set completefunc=RtagsCompleteFunc
 endif
 
 " Helpers to access script locals for unit testing {{{
