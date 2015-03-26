@@ -219,6 +219,12 @@ function! rtags#FindRefsByName(name)
     call rtags#DisplayResults(result)
 endfunction
 
+" case insensitive FindRefsByName
+function! rtags#IFindRefsByName(name)
+    let result = rtags#ExecuteRC({ 'e' : '', 'R' : a:name, 'I' : '' })
+    call rtags#DisplayResults(result)
+endfunction
+
 " Find all those references which has the name which is equal to the word
 " under the cursor
 function! rtags#FindRefsOfWordUnderCursor()
@@ -229,6 +235,12 @@ endfunction
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern)
     let result = rtags#ExecuteRC({ 'F' : a:pattern })
+    call rtags#DisplayResults(result)
+endfunction
+
+" case insensitive FindSymbol
+function! rtags#IFindSymbols(pattern)
+    let result = rtags#ExecuteRC({ 'IF' : a:pattern })
     call rtags#DisplayResults(result)
 endfunction
 
@@ -321,4 +333,10 @@ endfunction
 
 command! -nargs=1 RtagsFindSymbols call rtags#FindSymbols(<q-args>)
 command! -nargs=1 RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
+
+command! -nargs=1 RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
+command! -nargs=1 RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
+
+" The most commonly used find operation
+command! -nargs=1 Rtag RtagsIFindSymbols <q-args>
 
