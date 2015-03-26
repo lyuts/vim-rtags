@@ -318,3 +318,7 @@ function! rtags#__context__()
     return { 'sid': s:SID, 'scope': s: }
 endfunction
 "}}}
+
+command! -nargs=1 RtagsFindSymbols call rtags#FindSymbols(<q-args>)
+command! -nargs=1 RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
+
