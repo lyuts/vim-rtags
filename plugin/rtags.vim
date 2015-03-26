@@ -215,13 +215,13 @@ function! rtags#FindRefs()
 endfunction
 
 function! rtags#FindRefsByName(name)
-    let result = rtags#ExecuteRC({ 'e' : '', 'R' : a:name })
+    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name })
     call rtags#DisplayResults(result)
 endfunction
 
 " case insensitive FindRefsByName
 function! rtags#IFindRefsByName(name)
-    let result = rtags#ExecuteRC({ 'e' : '', 'R' : a:name, 'I' : '' })
+    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name, 'I' : '' })
     call rtags#DisplayResults(result)
 endfunction
 
@@ -234,13 +234,13 @@ endfunction
 
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern)
-    let result = rtags#ExecuteRC({ 'F' : a:pattern })
+    let result = rtags#ExecuteRC({ 'aF' : a:pattern })
     call rtags#DisplayResults(result)
 endfunction
 
 " case insensitive FindSymbol
 function! rtags#IFindSymbols(pattern)
-    let result = rtags#ExecuteRC({ 'IF' : a:pattern })
+    let result = rtags#ExecuteRC({ 'aIF' : a:pattern })
     call rtags#DisplayResults(result)
 endfunction
 
