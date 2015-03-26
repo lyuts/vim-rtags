@@ -254,6 +254,10 @@ function! rtags#ProjectOpen(pattern)
     call rtags#ExecuteRC({ 'w' : a:pattern })
 endfunction
 
+function! rtags#LoadCompilationDb(pattern)
+    call rtags#ExecuteRC({ 'J' : a:pattern })
+endfunction
+
 function! rtags#ProjectClose(pattern)
     call rtags#ExecuteRC({ 'u' : a:pattern })
 endfunction
@@ -336,6 +340,8 @@ command! -nargs=1 RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
 
 command! -nargs=1 RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
 command! -nargs=1 RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
+
+command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilationDb(<q-args>)
 
 " The most commonly used find operation
 command! -nargs=1 Rtag RtagsIFindSymbols <q-args>
