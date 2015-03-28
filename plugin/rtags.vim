@@ -75,8 +75,12 @@ function! rtags#ExecuteRC(args, ...)
             let cmd .= " ".value
         endif
     endfor
-    let output = split(system(cmd), '\n\+')
-    return output
+    let output = system(cmd)
+    if output =~ 'Not indexed'
+        echohl ErrorMsg | echomsg "[vim-rtags] Current file is not indexed!" | echohl None
+        return []
+    endif
+    return split(output, '\n\+')
 endfunction
 
 function! rtags#CreateProject()
@@ -119,7 +123,9 @@ endfunction
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
     call setloclist(winnr(), locations)
-    lopen
+    if len(locations) > 0
+        lopen
+    endif
 endfunction
 
 function! rtags#getRcCmd()
