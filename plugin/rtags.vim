@@ -76,7 +76,7 @@ function! rtags#ExecuteRC(args, ...)
         endif
     endfor
     let output = system(cmd)
-    if output =~ 'Not indexed'
+    if output =~ '^Not indexed'
         echohl ErrorMsg | echomsg "[vim-rtags] Current file is not indexed!" | echohl None
         return []
     endif
