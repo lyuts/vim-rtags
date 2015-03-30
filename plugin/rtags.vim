@@ -215,7 +215,13 @@ function! rtags#FindRefs()
 endfunction
 
 function! rtags#FindRefsByName(name)
-    let result = rtags#ExecuteRC({ 'e' : '', 'R' : a:name })
+    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name })
+    call rtags#DisplayResults(result)
+endfunction
+
+" case insensitive FindRefsByName
+function! rtags#IFindRefsByName(name)
+    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name, 'I' : '' })
     call rtags#DisplayResults(result)
 endfunction
 
@@ -228,7 +234,13 @@ endfunction
 
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern)
-    let result = rtags#ExecuteRC({ 'F' : a:pattern })
+    let result = rtags#ExecuteRC({ 'aF' : a:pattern })
+    call rtags#DisplayResults(result)
+endfunction
+
+" case insensitive FindSymbol
+function! rtags#IFindSymbols(pattern)
+    let result = rtags#ExecuteRC({ 'aIF' : a:pattern })
     call rtags#DisplayResults(result)
 endfunction
 
@@ -240,6 +252,10 @@ endfunction
 
 function! rtags#ProjectOpen(pattern)
     call rtags#ExecuteRC({ 'w' : a:pattern })
+endfunction
+
+function! rtags#LoadCompilationDb(pattern)
+    call rtags#ExecuteRC({ 'J' : a:pattern })
 endfunction
 
 function! rtags#ProjectClose(pattern)
@@ -318,3 +334,15 @@ function! rtags#__context__()
     return { 'sid': s:SID, 'scope': s: }
 endfunction
 "}}}
+
+command! -nargs=1 RtagsFindSymbols call rtags#FindSymbols(<q-args>)
+command! -nargs=1 RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
+
+command! -nargs=1 RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
+command! -nargs=1 RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
+
+command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilationDb(<q-args>)
+
+" The most commonly used find operation
+command! -nargs=1 Rtag RtagsIFindSymbols <q-args>
+
