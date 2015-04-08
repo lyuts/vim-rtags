@@ -102,6 +102,7 @@ function! rtags#ParseResults(results)
         let entry = {}
 "        let entry.bufn = 0
         let entry.filename = substitute(file, getcwd().'/', '', 'g')
+        let entry.filepath = file
         let entry.lnum = lnum
 "        let entry.pattern = ''
         let entry.col = col
@@ -136,20 +137,30 @@ function! rtags#getRcCmd()
     return g:rcCmd
 endfunction
 
+function! rtags#getCurrentLocation()
+    let [lnum, col] = getpos('.')[1:2]
+    return printf("%s:%s:%s", expand("%"), lnum, col)
+endfunction
+
 function! rtags#SymbolInfo()
     let args = {}
-    let [lnum, col] = getpos('.')[1:2]
-    let args.U = printf("%s:%s:%s", expand("%"), lnum, col)
+    let args.U = rtags#getCurrentLocation()
     let output = rtags#ExecuteRC(args)
     for line in output
         echo line
     endfor
 endfunction
 
+function! rtags#jumpToLocation(file, line, col)
+    if a:file != expand("%:p")
+        exe "e ".a:file
+    endif
+    call cursor(a:line, a:col)
+endfunction
+
 function! rtags#JumpTo()
     let args = {}
-    let [lnum, col] = getpos('.')[1:2]
-    let args.f = printf("%s:%s:%s", expand("%"), lnum, col)
+    let args.f = rtags#getCurrentLocation()
     let results = rtags#ExecuteRC(args)
     
     if len(results) > 1
@@ -160,10 +171,7 @@ function! rtags#JumpTo()
 
         " Add location to the jumplist
         normal m'
-        if jump_file != expand("%:p")
-            exe "e ".jump_file
-        endif
-        call cursor(lnum, col)
+        call rtags#jumpToLocation(jump_file, lnum, col)
         normal zz
     endif
 endfunction
@@ -183,8 +191,7 @@ endfunction
 
 function! rtags#JumpToParent()
     let args = {}
-    let [lnum, col] = getpos('.')[1:2]
-    let args.U = printf("%s:%s:%s", expand("%"), lnum, col)
+    let args.U = rtags#getCurrentLocation()
     let longArgs = ["cursorinfo-include-parents"]
     let results = rtags#ExecuteRC(args, longArgs)
 
@@ -199,10 +206,7 @@ function! rtags#JumpToParent()
             if !empty(jump_file)
                 " Add location to the jumplist
                 normal m'
-                if jump_file != expand("%:p")
-                    exe "e ".jump_file
-                endif
-                call cursor(lnum, col)
+                call rtags#jumpToLocation(jump_file, lnum, col)
                 normal zz
                 return
             endif
@@ -210,13 +214,45 @@ function! rtags#JumpToParent()
     endfor
 endfunction
 
+function! rtags#RenameSymbolUnderCursor()
+    let args = {}
+    let args.e = ''
+    let args.r = rtags#getCurrentLocation()
+    let longArgs = ["rename"]
+    let locations = rtags#ParseResults(rtags#ExecuteRC(args, longArgs))
+    if len(locations) > 0
+        let newName = input("Enter new name: ")
+        let yesToAll = 0
+        if !empty(newName)
+            for loc in reverse(locations)
+                call rtags#jumpToLocation(loc.filepath, loc.lnum, loc.col)
+                normal zz
+                redraw
+                let choice = yesToAll
+                if choice == 0
+                    let location = loc.filepath.":".loc.lnum.":".loc.col
+                    let choices = "&Yes\nYes to &All\n&No\n&Cancel"
+                    let choice = confirm("Rename symbol at ".location, choices)
+                endif
+                if choice == 2
+                    let choice = 1
+                    let yesToAll = 1
+                endif
+                if choice == 1
+                    exec "normal ciw".newName."\<Esc>"
+                    write!
+                elseif choice == 4
+                    return
+                endif
+            endfor
+        endif
+    endif
+endfunction
+
 function! rtags#FindRefs()
     let args = {}
     let args.e = ''
-
-    let [lnum, col] = getpos('.')[1:2]
-    let args.r = printf("%s:%s:%s", expand("%"), lnum, col)
-
+    let args.r = rtags#getCurrentLocation()
     let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
