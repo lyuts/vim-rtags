@@ -18,6 +18,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
+    noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
