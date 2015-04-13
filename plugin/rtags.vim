@@ -18,6 +18,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
+    noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
@@ -251,9 +252,16 @@ function! rtags#IFindSymbols(pattern)
 endfunction
 
 function! rtags#ProjectList()
-    for line in  rtags#ExecuteRC({'w' : ''})
-        echo line
+    let projects = rtags#ExecuteRC({'w' : ''})
+    let i = 1
+    for p in projects
+        echo '['.i.'] '.p
+        let i = i + 1
     endfor
+    let choice = input('Choice: ')
+    if choice > 0 && choice <= len(projects)
+        call rtags#ProjectOpen(projects[choice-1])
+    endif
 endfunction
 
 function! rtags#ProjectOpen(pattern)
