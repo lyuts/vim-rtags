@@ -13,6 +13,9 @@ endif
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
+    noremap <Leader>rS :call rtags#JumpTo(" ")<CR>
+    noremap <Leader>rV :call rtags#JumpTo("vert")<CR>
+    noremap <Leader>rT :call rtags#JumpTo("tab")<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
@@ -152,6 +155,12 @@ function! rtags#SymbolInfo()
     endfor
 endfunction
 
+function! rtags#cloneCurrentBuffer(type)
+    let [lnum, col] = getpos('.')[1:2]
+    exec a:type." new ".expand("%")
+    call cursor(lnum, col)
+endfunction
+
 function! rtags#jumpToLocation(file, line, col)
     if a:file != expand("%:p")
         exe "e ".a:file
@@ -159,11 +168,15 @@ function! rtags#jumpToLocation(file, line, col)
     call cursor(a:line, a:col)
 endfunction
 
-function! rtags#JumpTo()
+function! rtags#JumpTo(...)
     let args = {}
     let args.f = rtags#getCurrentLocation()
     let results = rtags#ExecuteRC(args)
-    
+
+    if len(results) >= 0 && a:0 > 0
+        call rtags#cloneCurrentBuffer(a:1)
+    endif
+
     if len(results) > 1
         call rtags#DisplayResults(results)
     elseif len(results) == 1
@@ -190,10 +203,10 @@ function! rtags#parseSourceLocation(string)
     return ["","",""]
 endfunction
 
-function! rtags#JumpToParent()
+function! rtags#JumpToParent(...)
     let args = {}
     let args.U = rtags#getCurrentLocation()
-    let longArgs = ["cursorinfo-include-parents"]
+    let longArgs = ["symbol-info-include-parents"]
     let results = rtags#ExecuteRC(args, longArgs)
 
     let parentSeparator = "===================="
@@ -205,6 +218,10 @@ function! rtags#JumpToParent()
         if parentSeparatorPassed == 1
             let [jump_file, lnum, col] = rtags#parseSourceLocation(line)
             if !empty(jump_file)
+                if a:0 > 0
+                    call rtags#cloneCurrentBuffer(a:1)
+                endif
+
                 " Add location to the jumplist
                 normal m'
                 call rtags#jumpToLocation(jump_file, lnum, col)
@@ -328,7 +345,7 @@ function! rtags#CompleteAtCursor()
     let pos = getpos('.')
     let line = pos[1]
     let col = pos[2]
-    
+
     let rcRealCmd = rtags#getRcCmd()
     let cmd = printf("%s %s %s:%s:%s", rcRealCmd, flags, file, line, col)
     let result = split(system(cmd), '\n\+')
@@ -343,13 +360,13 @@ function! RtagsCompleteFunc(findstart, base)
     echomsg "RtagsCompleteFunc: ".a:base
     if a:findstart
         " todo: find word start
-        exec "normal \<Esc>" 
+        exec "normal \<Esc>"
         let cword = expand("<cword>")
         exec "startinsert!"
         echomsg cword
         return strridx(getline(line('.')), cword)
     else
-        
+
         let completeopts = rtags#CompleteAtCursor()
         let a = []
             for line in completeopts
