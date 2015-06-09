@@ -6,6 +6,10 @@ endif
 let g:rcCmd = "rc"
 let g:excludeSysHeaders = 0
 
+if !exists("g:rtagsUseLocationList")
+    let g:rtagsUseLocationList = 1
+endif
+
 if !has("g:rtagsUseDefaultMappings")
     let g:rtagsUseDefaultMappings = 1
 endif
@@ -125,9 +129,16 @@ endfunction
 " Format of each line: <path>,<line>\s<text>
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
-    call setloclist(winnr(), locations)
-    if len(locations) > 0
-        lopen
+    if g:rtagsUseLocationList == 1
+        call setloclist(winnr(), locations)
+        if len(locations) > 0
+            lopen
+        endif
+    else
+        call setqflist(locations)
+        if len(locations) > 0
+            copen
+        endif
     endif
 endfunction
 
