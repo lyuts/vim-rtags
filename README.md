@@ -43,6 +43,12 @@ default mappings can be disabled:
 
     let g:rtagsUseDefaultMappings = 0
 
+By default, search results are showed in a location list. Location lists
+are local to the current window. To use the vim QuickFix window, which is
+shared between all windows, set:
+
+    let g:rtagsUseLocationList = 0
+
 # Usage
 Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U).
 
