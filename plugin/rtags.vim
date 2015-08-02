@@ -350,16 +350,46 @@ function! rtags#FindSymbolsOfWordUnderCursor()
     call rtags#FindSymbols(wordUnderCursor)
 endfunction
 
-function! rtags#CompleteAtCursor()
+"
+" This function assumes it is invoked from insert mode
+"
+function! rtags#CompleteAtCursor(wordStart, base)
     let flags = "--synchronous-completions -l"
     let file = expand("%:p")
     let pos = getpos('.')
     let line = pos[1]
-    let col = pos[2]
+    let col = a:wordStart
+
+    if index(['.', '::', '->'], a:base) != -1
+        let col += 1
+    endif
 
     let rcRealCmd = rtags#getRcCmd()
-    let cmd = printf("%s %s %s:%s:%s", rcRealCmd, flags, file, line, col)
-    let result = split(system(cmd), '\n\+')
+
+    exec "normal \<Esc>"
+    let stdin_lines = join(getline(1, line), "\n").a:base
+    let offset = line2byte(line + 1)
+
+    if offset == -1
+        " in case completion is on the last row
+        let offset = line2byte(line('$') + 1)
+    endif
+
+    exec "startinsert!"
+"    echomsg getline(line)
+"    sleep 1
+"    echomsg "DURING INVOCATION POS: ".pos[2]
+"    sleep 1
+    echomsg stdin_lines
+"    sleep 1
+    " sed command to remove CDATA prefix and closing xml tag from rtags output
+    let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
+    let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
+    echomsg cmd
+    sleep 1
+    let result = split(system(cmd, stdin_lines), '\n\+')
+    echomsg "Got ".len(result)." completions"
+    sleep 1
     return result
 "    for r in result
 "        echo r
@@ -367,20 +397,60 @@ function! rtags#CompleteAtCursor()
 "    call rtags#DisplayResults(result)
 endfunction
 
+"""
+" Temporarily the way this function works is:
+"     - completeion invoked on
+"         object.meth*
+"       , where * is cursor position
+"     - find the position of a dot/arrow
+"     - invoke completion through rc
+"     - filter out options that start with meth (in this case).
+"     - show completion options
+" 
+"     Reason: rtags returns all options regardless of already type method name
+"     portion
+"""
 function! RtagsCompleteFunc(findstart, base)
-    echomsg "RtagsCompleteFunc: ".a:base
+    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
+    sleep 1
     if a:findstart
         " todo: find word start
         exec "normal \<Esc>"
         let cword = expand("<cword>")
         exec "startinsert!"
-        echomsg cword
-        return strridx(getline(line('.')), cword)
-    else
+"        echomsg "CWORD [".cword."]"
+        let wordstart = strridx(getline('.'), cword)
+"        if index([ '.', '->', '::' ], cword) != -1
+"            let wordstart += 1
+"        endif
+"        echomsg wordstart
+"        sleep 2
 
-        let completeopts = rtags#CompleteAtCursor()
+        return wordstart
+    else
+        let wordstart = getpos('.')[2]
+
+        " this is the case when completion invoked right after the dot
+"        if index([ '.', '->', '::' ], a:base) != -1
+        if a:base == ""
+            let wordstart += 1
+        endif
+
+"        let cdata_pivot = 'CDATA['
+        let completeopts = rtags#CompleteAtCursor(wordstart, a:base)
         let a = []
             for line in completeopts
+"                let cdata_pos = stridx(line, cdata_pivot)
+"                if cdata_pos != -1
+"                    let line = strpart(line, cdata_pos + strlen(cdata_pivot))
+"                endif
+"                echo line
+"                sleep 1
+                " remove lines with closing </completions> tag
+"                if stridx(line, "completions>") != -1
+"                    continue
+"                endif
+
                 let option = split(line)
                 if a:base != "" && stridx(option[0], a:base) != 0
                     continue
