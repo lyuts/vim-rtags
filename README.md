@@ -52,20 +52,20 @@ shared between all windows, set:
 # Usage
 
 ## Mappings
-| Mapping    | rc flag                          | Description                                |
-|------------|----------------------------------|--------------------------------------------|
-| <Leader>ri | -U                               | Symbol info                                |
-| <Leader>rj | -f                               | Follow location                            |
-| <Leader>rS | -f                               | Follow location (open in horizontal split) |
-| <Leader>rV | -f                               | Follow location (open in vertical split)   |
-| <Leader>rT | -f                               | Follow location open in a new tab          |
-| <Leader>rp | -U --symbol-info-include-parents | Jump to parent                             |
-| <Leader>rf | -e -r                            | Find references                            |
-| <Leader>rn | -ae -R                           | Find references by name                    |
-| <Leader>rs | -a -F                            | Find symbols by name                       |
-| <Leader>rr | -V                               | Reindex current file                       |
-| <Leader>rl | -w                               | List all available projects                |
-| <Leader>rw | -e -r --rename                   | Rename symbol under cursor                 |
+| Mapping          | rc flag                          | Description                                |
+|------------------|----------------------------------|--------------------------------------------|
+| &lt;Leader&gt;ri | -U                               | Symbol info                                |
+| &lt;Leader&gt;rj | -f                               | Follow location                            |
+| &lt;Leader&gt;rS | -f                               | Follow location (open in horizontal split) |
+| &lt;Leader&gt;rV | -f                               | Follow location (open in vertical split)   |
+| &lt;Leader&gt;rT | -f                               | Follow location open in a new tab          |
+| &lt;Leader&gt;rp | -U --symbol-info-include-parents | Jump to parent                             |
+| &lt;Leader&gt;rf | -e -r                            | Find references                            |
+| &lt;Leader&gt;rn | -ae -R                           | Find references by name                    |
+| &lt;Leader&gt;rs | -a -F                            | Find symbols by name                       |
+| &lt;Leader&gt;rr | -V                               | Reindex current file                       |
+| &lt;Leader&gt;rl | -w                               | List all available projects                |
+| &lt;Leader&gt;rw | -e -r --rename                   | Rename symbol under cursor                 |
 
 ## Code completion
 Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U). If ```completefunc```
