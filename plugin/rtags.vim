@@ -72,6 +72,14 @@ endfunction
 " return output split by newline
 function! rtags#ExecuteRC(args, ...)
     let cmd = rtags#getRcCmd()
+
+    " Give rdm unsaved file content, so that you don't have to save files
+    " before each rc invocation.
+    let unsaved_content = join(getline(1, line('$')), "\n")
+    let filename = expand("%")
+    let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+
+    " prepare for the actual command invocation
     if a:0 > 0
         let longArgs = a:1
         for longArg in longArgs
@@ -84,6 +92,7 @@ function! rtags#ExecuteRC(args, ...)
             let cmd .= " ".value
         endif
     endfor
+
     let output = system(cmd)
     if output =~ '^Not indexed'
         echohl ErrorMsg | echomsg "[vim-rtags] Current file is not indexed!" | echohl None
