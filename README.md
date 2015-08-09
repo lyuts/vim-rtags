@@ -50,7 +50,29 @@ shared between all windows, set:
     let g:rtagsUseLocationList = 0
 
 # Usage
-Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U).
+
+## Mappings
+| Mapping    | rc flag                          | Description                                |
+|------------|----------------------------------|--------------------------------------------|
+| <Leader>ri | -U                               | Symbol info                                |
+| <Leader>rj | -f                               | Follow location                            |
+| <Leader>rS | -f                               | Follow location (open in horizontal split) |
+| <Leader>rV | -f                               | Follow location (open in vertical split)   |
+| <Leader>rT | -f                               | Follow location open in a new tab          |
+| <Leader>rp | -U --symbol-info-include-parents | Jump to parent                             |
+| <Leader>rf | -e -r                            | Find references                            |
+| <Leader>rn | -ae -R                           | Find references by name                    |
+| <Leader>rs | -a -F                            | Find symbols by name                       |
+| <Leader>rr | -V                               | Reindex current file                       |
+| <Leader>rl | -w                               | List all available projects                |
+| <Leader>rw | -e -r --rename                   | Rename symbol under cursor                 |
+
+## Code completion
+Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U). If ```completefunc```
+is set, vim-rtags will not override it with ```RtagsCompleteFunc```. This functionality is still
+unstable, but if you want to try it you will have to set ```completefunc``` by
+
+    set completefunc=RtagsCompleteFunc
 
 # Notes
 1. This plugin is wip.
