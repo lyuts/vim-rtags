@@ -27,6 +27,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
+    noremap <Leader>rv :call rtags#FindVirtuals()<CR>
     noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
@@ -281,6 +282,14 @@ endfunction
 function! rtags#FindRefs()
     let args = {}
     let args.e = ''
+    let args.r = rtags#getCurrentLocation()
+    let result = rtags#ExecuteRC(args)
+    call rtags#DisplayResults(result)
+endfunction
+
+function! rtags#FindVirtuals()
+    let args = {}
+    let args.k = ''
     let args.r = rtags#getCurrentLocation()
     let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
