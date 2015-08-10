@@ -66,6 +66,7 @@ shared between all windows, set:
 | &lt;Leader&gt;rr | -V                               | Reindex current file                       |
 | &lt;Leader&gt;rl | -w                               | List all available projects                |
 | &lt;Leader&gt;rw | -e -r --rename                   | Rename symbol under cursor                 |
+| &lt;Leader&gt;rv | -k -r                            | Find virtuals                              |
 
 ## Code completion
 Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U). If ```completefunc```
