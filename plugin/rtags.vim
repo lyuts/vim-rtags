@@ -269,6 +269,7 @@ function! rtags#RenameSymbolUnderCursor()
                     let yesToAll = 1
                 endif
                 if choice == 1
+                    normal zv
                     exec "normal ciw".newName."\<Esc>"
                     write!
                 elseif choice == 4
