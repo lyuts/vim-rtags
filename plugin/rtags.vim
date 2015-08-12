@@ -256,6 +256,7 @@ function! rtags#RenameSymbolUnderCursor()
         if !empty(newName)
             for loc in reverse(locations)
                 call rtags#jumpToLocation(loc.filepath, loc.lnum, loc.col)
+                normal zv
                 normal zz
                 redraw
                 let choice = yesToAll
@@ -269,7 +270,6 @@ function! rtags#RenameSymbolUnderCursor()
                     let yesToAll = 1
                 endif
                 if choice == 1
-                    normal zv
                     exec "normal ciw".newName."\<Esc>"
                     write!
                 elseif choice == 4
