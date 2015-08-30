@@ -68,6 +68,14 @@ shared between all windows, set:
 | &lt;Leader&gt;rw | -e -r --rename                   | Rename symbol under cursor                 |
 | &lt;Leader&gt;rv | -k -r                            | Find virtuals                              |
 
+## Unite sources
+
+This plugin defines three Unite sources:
+* `rtags/references` - list references (i.e., &lt;Leader&gt;rf).
+* `rtags/symbol` - find symbol (i.e., &lt;Leader&gt;rs). Use `rtags/symbol:i`
+  for case insensitibe search.
+* `rtags/project` - list/switch projects.
+
 ## Code completion
 Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U). If ```completefunc```
 is set, vim-rtags will not override it with ```RtagsCompleteFunc```. This functionality is still
