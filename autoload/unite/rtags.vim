@@ -22,8 +22,17 @@ function! unite#rtags#get_word(result)
         let cwd = join(split(cwd, '/')[:-2], '/')
         " since the join does not place a starting '/' we need to skip to the
         " second element
-        let relpath = split(a:result, cwd.'/')[1]
-        let relfix = relfix . '../'
+        let parts = split(a:result, cwd.'/')
+
+        if (len(parts) == 2)
+            let relpath = parts[1]
+            let relfix = relfix . '../'
+        else
+            " no common ancestry
+            let relpath = a:result
+            let relfix = ''
+            break
+        endif
     endwhile
 
     return relfix . relpath
