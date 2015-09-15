@@ -351,6 +351,12 @@ function! rtags#ProjectClose(pattern)
     call rtags#ExecuteRC({ 'u' : a:pattern })
 endfunction
 
+function! rtags#PreprocessFile()
+    let result = rtags#ExecuteRC({ 'E' : expand("%:p") })
+    vnew
+    call append(0, result)
+endfunction
+
 function! rtags#ReindexFile()
     call rtags#ExecuteRC({ 'V' : expand("%:p") })
 endfunction
