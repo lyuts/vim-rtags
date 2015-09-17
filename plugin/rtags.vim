@@ -147,10 +147,12 @@ function! rtags#DisplayResults(results)
 endfunction
 
 function! rtags#getRcCmd()
+    let cmd = g:rcCmd
+    let cmd .= " --absolute-path "
     if g:excludeSysHeaders == 1
-        return g:rcCmd." -H "
+        return cmd." -H "
     endif
-    return g:rcCmd
+    return cmd
 endfunction
 
 function! rtags#getCurrentLocation()
