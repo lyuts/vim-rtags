@@ -86,7 +86,7 @@ function! rtags#ExecuteRC(args, ...)
         endif
     endfor
     let output = system(cmd)
-    if v:shell_error
+    if v:shell_error && len(output) > 0
         let output = substitute(output, '\n', '', '')
         echohl ErrorMsg | echomsg "[vim-rtags] Error: " . output | echohl None
         return []
