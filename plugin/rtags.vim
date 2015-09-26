@@ -14,6 +14,10 @@ if !has("g:rtagsUseDefaultMappings")
     let g:rtagsUseDefaultMappings = 1
 endif
 
+if !has("g:rtagsMinCharsForCommandCompletion")
+    let g:rtagsMinCharsForCommandCompletion = 4
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -322,6 +326,15 @@ function! rtags#FindSymbols(pattern)
     call rtags#DisplayResults(result)
 endfunction
 
+" Method for tab-completion for vim's commands
+function! CompleteSymbols(arg, line, pos)
+    if len(a:arg) < g:rtagsMinCharsForCommandCompletion
+        return []
+    endif
+    let result = rtags#ExecuteRC({ 'S' : a:arg })
+    return filter(result, 'v:val !~ "("')
+endfunction
+
 " case insensitive FindSymbol
 function! rtags#IFindSymbols(pattern)
     let result = rtags#ExecuteRC({ 'aIF' : a:pattern })
@@ -502,14 +515,14 @@ function! rtags#__context__()
 endfunction
 "}}}
 
-command! -nargs=1 RtagsFindSymbols call rtags#FindSymbols(<q-args>)
-command! -nargs=1 RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
+command! -nargs=1 -complete=customlist,CompleteSymbols RtagsFindSymbols call rtags#FindSymbols(<q-args>)
+command! -nargs=1 -complete=customlist,CompleteSymbols RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
 
-command! -nargs=1 RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
-command! -nargs=1 RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
+command! -nargs=1 -complete=customlist,CompleteSymbols RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
+command! -nargs=1 -complete=customlist,CompleteSymbols RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
 
 command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilationDb(<q-args>)
 
 " The most commonly used find operation
-command! -nargs=1 Rtag RtagsIFindSymbols <q-args>
+command! -nargs=1 -complete=customlist,CompleteSymbols Rtag RtagsIFindSymbols <q-args>
 
