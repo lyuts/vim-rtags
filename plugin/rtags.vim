@@ -26,8 +26,8 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rT :call rtags#JumpTo("tab")<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
-    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ")<CR>
-    noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? "))<CR>
+    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols")<CR>
+    noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
@@ -327,7 +327,7 @@ function! rtags#FindSymbols(pattern)
 endfunction
 
 " Method for tab-completion for vim's commands
-function! CompleteSymbols(arg, line, pos)
+function! rtags#CompleteSymbols(arg, line, pos)
     if len(a:arg) < g:rtagsMinCharsForCommandCompletion
         return []
     endif
@@ -515,14 +515,14 @@ function! rtags#__context__()
 endfunction
 "}}}
 
-command! -nargs=1 -complete=customlist,CompleteSymbols RtagsFindSymbols call rtags#FindSymbols(<q-args>)
-command! -nargs=1 -complete=customlist,CompleteSymbols RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
+command! -nargs=1 -complete=customlist,rtags#CompleteSymbols RtagsFindSymbols call rtags#FindSymbols(<q-args>)
+command! -nargs=1 -complete=customlist,rtags#CompleteSymbols RtagsFindRefsByName call rtags#FindRefsByName(<q-args>)
 
-command! -nargs=1 -complete=customlist,CompleteSymbols RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
-command! -nargs=1 -complete=customlist,CompleteSymbols RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
+command! -nargs=1 -complete=customlist,rtags#CompleteSymbols RtagsIFindSymbols call rtags#IFindSymbols(<q-args>)
+command! -nargs=1 -complete=customlist,rtags#CompleteSymbols RtagsIFindRefsByName call rtags#IFindRefsByName(<q-args>)
 
 command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilationDb(<q-args>)
 
 " The most commonly used find operation
-command! -nargs=1 -complete=customlist,CompleteSymbols Rtag RtagsIFindSymbols <q-args>
+command! -nargs=1 -complete=customlist,rtags#CompleteSymbols Rtag RtagsIFindSymbols <q-args>
 
