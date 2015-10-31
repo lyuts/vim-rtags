@@ -10,11 +10,11 @@ if !exists("g:rtagsUseLocationList")
     let g:rtagsUseLocationList = 1
 endif
 
-if !has("g:rtagsUseDefaultMappings")
+if !exists("g:rtagsUseDefaultMappings")
     let g:rtagsUseDefaultMappings = 1
 endif
 
-if !has("g:rtagsMinCharsForCommandCompletion")
+if !exists("g:rtagsMinCharsForCommandCompletion")
     let g:rtagsMinCharsForCommandCompletion = 4
 endif
 
