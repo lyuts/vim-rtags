@@ -18,6 +18,10 @@ if !exists("g:rtagsMinCharsForCommandCompletion")
     let g:rtagsMinCharsForCommandCompletion = 4
 endif
 
+if !exists("g:rtagsSearchRdm")
+    let g:rtagsSearchRdm = 0
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -155,8 +159,25 @@ function! rtags#DisplayResults(results)
     endif
 endfunction
 
+function! rtags#searchRdm()
+    let dir = resolve(getcwd())
+    let prevdir = ""
+    while dir != prevdir
+        let candidate = dir . "/.rdm"
+        if !empty(glob(candidate))
+            return candidate
+        endif
+        let prevdir = dir
+        let dir = resolve(dir . '/..')
+    endwhile
+    return expand("~/.rdm")
+endfunction
+
 function! rtags#getRcCmd()
     let cmd = g:rcCmd
+    if g:rtagsSearchRdm == 1
+        let cmd .= " --socket-file " . fnameescape(rtags#searchRdm())
+    endif
     let cmd .= " --absolute-path "
     if g:excludeSysHeaders == 1
         return cmd." -H "
