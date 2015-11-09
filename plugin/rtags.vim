@@ -83,6 +83,7 @@ function! rtags#ExecuteRC(args, ...)
             let cmd .= " --".longArg." "
         endfor
     endif
+    let cmd .= " --absolute-path"
     for [key, value] in items(a:args)
         let cmd .= " -".key
         if len(value) > 1
@@ -442,7 +443,7 @@ endfunction
 "     - invoke completion through rc
 "     - filter out options that start with meth (in this case).
 "     - show completion options
-" 
+"
 "     Reason: rtags returns all options regardless of already type method name
 "     portion
 """
