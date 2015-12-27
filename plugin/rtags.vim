@@ -424,16 +424,16 @@ function! rtags#CompleteAtCursor(wordStart, base)
 "    sleep 1
 "    echomsg "DURING INVOCATION POS: ".pos[2]
 "    sleep 1
-    echomsg stdin_lines
+"    echomsg stdin_lines
 "    sleep 1
     " sed command to remove CDATA prefix and closing xml tag from rtags output
     let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
     let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-    echomsg cmd
-    sleep 1
+"    echomsg cmd
+"    sleep 1
     let result = split(system(cmd, stdin_lines), '\n\+')
-    echomsg "Got ".len(result)." completions"
-    sleep 1
+"    echomsg "Got ".len(result)." completions"
+"    sleep 1
     return result
 "    for r in result
 "        echo r
@@ -455,8 +455,8 @@ endfunction
 "     portion
 """
 function! RtagsCompleteFunc(findstart, base)
-    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
-    sleep 1
+"    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
+"    sleep 1
     if a:findstart
         " todo: find word start
         exec "normal \<Esc>"
