@@ -32,7 +32,6 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
-    noremap 6 :call rtags#CompleteAtCursor()<CR>
 endif
 
 " LineCol2Offset {{{
