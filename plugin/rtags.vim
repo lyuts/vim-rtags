@@ -26,7 +26,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rT :call rtags#JumpTo("tab")<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
-    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols")<CR>
+    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
     noremap <Leader>rl :call rtags#ProjectList()<CR>
