@@ -3,8 +3,13 @@ if !has("python")
     echohl ErrorMsg | echomsg "[vim-rtags] Python support is disabled!" | echohl None
 endif
 
-let g:rcCmd = "rc"
-let g:excludeSysHeaders = 0
+if !exists("g:rtagsRcCmd")
+    let g:rtagsRcCmd = "rc"
+endif
+
+if !exists("g:rtagsExcludeSysHeaders")
+    let g:rtagsExcludeSysHeaders = 0
+endif
 
 if !exists("g:rtagsUseLocationList")
     let g:rtagsUseLocationList = 1
@@ -166,9 +171,9 @@ function! rtags#DisplayResults(results)
 endfunction
 
 function! rtags#getRcCmd()
-    let cmd = g:rcCmd
+    let cmd = g:rtagsRcCmd
     let cmd .= " --absolute-path "
-    if g:excludeSysHeaders == 1
+    if g:rtagsExcludeSysHeaders == 1
         return cmd." -H "
     endif
     return cmd
