@@ -1,0 +1,176 @@
+*vim-rtags* VIM bindings for RTags, C/C++ code indexer.
+
+CONTENTS                                                        *rtags-contents*
+
+    1. Intro                                            |rtags-intro|
+    2. Installation                                     |rtags-installation|
+    3. Variables                                        |rtags-variables|
+    4. Mappings                                         |rtags-mappings|
+    5. Commands                                         |rtags-commands|
+    6. Integrations with other plugins                  |rtags-integrations|
+    7. Todo                                             |rtags-todo|
+    8. License                                          |rtags-license|
+
+================================================================================
+
+                                                                   *rtags-intro*
+1. Intro
+    Vim bindings for rtags (https://github.com/Andersbakken/rtags).
+
+                                                            *rtags-installation*
+2. Installation
+    Follow your plugin manager installation instructions. This plugin requires
+    vim compiled with +python option.
+
+                                                                *rtags-variable*
+3. Variables
+
+                                                         *g:rtagsRcCmd*
+                                                         *rtags-variable-rc-cmd*
+g:rtagsRcCmd
+
+    Default: "rc".
+    Points to an executable of 'rc' command provided by rtags distribution.
+    Default value expects the directory containing 'rc' to be in the PATH
+    environment variable. Overriding |g:rtagsRcCmd| allows you specify 'rc'
+    location if it is installed to a non standard location or the location
+    doesn't appear in the PATH.
+
+                                            *g:rtagsExcludeSysHeaders*
+                                            *rtags-variable-exclude-sys-headers*
+g:rtagsExcludeSysHeaders
+
+    Default: 0.
+    Controls whether search should skip system headers or not.
+
+                                              *g:rtagsUseLocationList*
+                                              *rtags-variable-use-location-list*
+g:rtagsUseLocationList
+
+    Default: 1.
+    If set to 1, search results are showed in a location list. Location lists
+    are local to the current window. Otherwise, QuickFix window, which is shared
+    between all windows, is used.
+
+                                           *g:rtagsUseDefaultMappings*
+                                           *rtags-variable-use-default-mappings*
+g:rtagsUseDefaultMappings
+
+    Default: 1.
+    If enabled plugin defines default mappings for interacting with the plugin.
+    Otherwise, no mappings are set up and custom mappings can be configured by
+    a user.
+
+                                        *g:rtagsMinCharsForCommandCompletion*
+                                        *rtags-variable-min-chars-for-cmd-compl*
+g:rtagsMinCharsForCommandCompletion
+
+    Default: 4.
+    Minimum number of characters to be typed before argument completion is
+    available for commands provided by the plugin or pluging mappings that
+    require user input.
+
+                                                                *rtags-mappings*
+4. Mappings
+                                                              *rtags-leader-ri*
+                                                              *rtags-SymbolInfo*
+    <Leader>ri      Display information about the symbol under the cursor.
+
+                                                               *rtags-leader-rj*
+                                                               *rtags-JumpTo*
+    <Leader>rj      Jump to declaration/definition.
+
+                                                            *rtags-leader-rS*
+                                                            *rtags-JumpTo-Split*
+    <Leader>rS      Same as <Leader>rj, but opens target location in a
+                    horizontal split.
+
+                                                       *rtags-leader-rV*
+                                                       *rtags-JumpTo-Vert-Split*
+    <Leader>rV      Same as <Leader>rj, but opens target location in a vertical
+                    split.
+
+                                                              *rtags-leader-rT*
+                                                              *rtags-JumpTo-Tab*
+    <Leader>rT      Same as <Leader>rj, but opens target location in a new tab.
+
+                                                            *rtags-leader-rp*
+                                                            *rtags-JumpToParent*
+    <Leader>rp      Jump to and entity that contains the symbol under the
+                    cursor, e.g. jump to the beginning of a function that has
+                    the local variable under a cursor, or jumpt to the class
+                    that defines a member function under a cursor, etc.
+
+
+                                                               *rtags-leader-rf*
+                                                               *rtags-FindRefs*
+    <Leader>rf      Find references of the symbol under the cursor.
+
+                                                          *rtags-leader-rn*
+                                                          *rtags-FindRefsByName*
+    <Leader>rn      Find symbol(s) references that match the provided pattern.
+                    Pattern is typed by a user on mapping invocation. Patterns
+                    whose length is equal or greater than value of
+                    |g:rtagsMinCharsForCommandCompletion| can be autocompleted.
+
+                                                             *rtags-leader-rs*
+                                                             *rtags-FindSymbols*
+    <Leader>rs      Find declaration/definition location for symbol(s) that
+                    match provided pattern.  Pattern is typed by a user on
+                    mapping invocation. Patterns whose length is equal or
+                    greater than value of |g:rtagsMinCharsForCommandCompletion|
+                    can be autocompleted.
+
+                                                             *rtags-leader-rr*
+                                                             *rtags-ReindexFile*
+    <Leader>rr      Trigger current file reindexing by 'rdm'.
+
+                                                             *rtags-leader-rl*
+                                                             *rtags-ProjectList*
+    <Leader>rl      List all projects registered with rdm and optionally switch
+                    an active project to a selected one by choosing
+                    corresponding index in the resulting list.
+
+                                                 *rtags-leader-rw*
+                                                 *rtags-RenameSymbolUnderCursor*
+    <Leader>rw      Rename symbol under cursor.
+
+                                                            *rtags-leader-rv*
+                                                            *rtags-FindVirtuals*
+    <Leader>rv      Find other implementations of a function, such as virtual
+                    functions.
+
+                                                              *rtags-leader-rjb*
+                                                              *rtags-JumpBack*
+    <Leader>rjb     Jump back to a previous location. This is equivalent to C-o.
+
+                                                                *rtags-commands*
+5. Commands
+
+    Helper function defined mostly for mapping convenience, but which still can
+    be directly if needed:
+        - RtagsFindSymbols
+        - RtagsFindRefsByName
+        - RtagsIFindSymbols
+        - RtagsIFindRefsByName
+        - RtagsLoadCompilationDb
+
+                                                            *rtags-integrations*
+6. Integrations with other plugins
+
+                                                       *rtags-integration-unite*
+    Plugin defines three Unite sources:
+
+        rtags/references    list references (alternative to <Leader>rf).
+
+        rtags/symbol        find symbol (alternative to <Leader>rs).
+
+        rtags/symbol:i      same as rtags/symbol, but for case insensitibe.
+
+        rtags/project       list/switch projects.
+
+
+                                                                    *rtags-todo*
+7. Todo
+                                                                 *rtags-license*
+8. License
