@@ -70,6 +70,15 @@ g:rtagsMinCharsForCommandCompletion
     available for commands provided by the plugin or pluging mappings that
     require user input.
 
+                                *g:rtagsMaxSearchResultWindowHeight*
+                                *rtags-variable-max-search-result-window-height*
+g:rtagsMaxSearchResultWindowHeight
+
+    Default: 10.
+    Determines the maximum height of the search result window. When number of
+    results is less than this parameter, the height is set to the number of
+    results.
+
                                                                 *rtags-mappings*
 4. Mappings
                                                               *rtags-leader-ri*

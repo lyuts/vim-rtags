@@ -23,6 +23,10 @@ if !exists("g:rtagsMinCharsForCommandCompletion")
     let g:rtagsMinCharsForCommandCompletion = 4
 endif
 
+if !exists("g:rtagsMaxSearchResultWindowHeight")
+    let g:rtagsMaxSearchResultWindowHeight = 10
+endif
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo()<CR>
@@ -157,15 +161,16 @@ endfunction
 " Format of each line: <path>,<line>\s<text>
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
+    let num_of_locations = len(locations)
     if g:rtagsUseLocationList == 1
         call setloclist(winnr(), locations)
-        if len(locations) > 0
-            lopen
+        if num_of_locations > 0
+            exe 'lopen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
         endif
     else
         call setqflist(locations)
-        if len(locations) > 0
-            copen
+        if num_of_locations > 0
+            exe 'copen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
         endif
     endif
 endfunction
