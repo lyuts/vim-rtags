@@ -487,11 +487,22 @@ function! rtags#CompleteAtCursor(wordStart, base)
     let result = split(system(cmd, stdin_lines), '\n\+')
 "    echomsg "Got ".len(result)." completions"
 "    sleep 1
+    call rtags#Log("-----------")
+    "call rtags#Log(result)
+    call rtags#Log("-----------")
     return result
 "    for r in result
 "        echo r
 "    endfor
 "    call rtags#DisplayResults(result)
+endfunction
+
+if !exists("g:rtagsLog")
+    let g:rtagsLog = "/tmp/rtags.log"
+endif
+
+function! rtags#Log(message)
+    call writefile([string(a:message)], g:rtagsLog, "a")
 endfunction
 
 """
@@ -508,14 +519,13 @@ endfunction
 "     portion
 """
 function! RtagsCompleteFunc(findstart, base)
-"    echomsg "RtagsCompleteFunc: [".a:findstart."], [".a:base."]"
-"    sleep 1
+    call rtags#Log("RtagsCompleteFunc: [".a:findstart."], [".a:base."]")
     if a:findstart
         " todo: find word start
         exec "normal \<Esc>"
         let cword = expand("<cword>")
         exec "startinsert!"
-"        echomsg "CWORD [".cword."]"
+        call rtags#Log("CWORD [".cword."]")
         let wordstart = strridx(getline('.'), cword)
 "        if index([ '.', '->', '::' ], cword) != -1
 "            let wordstart += 1
@@ -525,7 +535,7 @@ function! RtagsCompleteFunc(findstart, base)
 
         return wordstart
     else
-        let wordstart = getpos('.')[2]
+        let wordstart = getpos('.')[0]
 
         " this is the case when completion invoked right after the dot
 "        if index([ '.', '->', '::' ], a:base) != -1
@@ -560,6 +570,7 @@ function! RtagsCompleteFunc(findstart, base)
                 endif
                 let match.menu = join(option[1:len(option) - 1], ' ')
                 call add(a, match)
+                "call rtags#Log(match)
             endfor
         return a
     endif
