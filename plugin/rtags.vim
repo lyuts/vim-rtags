@@ -41,8 +41,6 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
-
-    noremap <Leader>rjb <C-o>
 endif
 
 " LineCol2Offset {{{
@@ -405,7 +403,6 @@ function! rtags#FindSymbolsOfWordUnderCursor()
     let wordUnderCursor = expand("<cword>")
     call rtags#FindSymbols(wordUnderCursor)
 endfunction
-
 
 "
 " This function assumes it is invoked from insert mode

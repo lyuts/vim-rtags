@@ -149,10 +149,6 @@ g:rtagsMaxSearchResultWindowHeight
     <Leader>rv      Find other implementations of a function, such as virtual
                     functions.
 
-                                                              *rtags-leader-rjb*
-                                                              *rtags-JumpBack*
-    <Leader>rjb     Jump back to a previous location. This is equivalent to C-o.
-
                                                                 *rtags-commands*
 5. Commands
 
