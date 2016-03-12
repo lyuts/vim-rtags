@@ -50,6 +50,15 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rb :call rtags#JumpBack()<CR>
 endif
 
+"""
+" Logging routine
+"""
+function! rtags#Log(message)
+    if exists("g:rtagsLog")
+        call writefile([string(a:message)], g:rtagsLog, "a")
+    endif
+endfunction
+
 " LineCol2Offset {{{
 " return Byte offset in the file for the current cursor position
 function! LineCol2Offset()
@@ -454,8 +463,8 @@ function! rtags#CompleteAtCursor(wordStart, base)
     let flags = "--synchronous-completions -l"
     let file = expand("%:p")
     let pos = getpos('.')
-    let line = pos[1]
-    let col = a:wordStart
+    let line = pos[1] 
+    let col = pos[2]
 
     if index(['.', '::', '->'], a:base) != -1
         let col += 1
@@ -464,13 +473,8 @@ function! rtags#CompleteAtCursor(wordStart, base)
     let rcRealCmd = rtags#getRcCmd()
 
     exec "normal \<Esc>"
-    let stdin_lines = join(getline(1, line), "\n").a:base
-    let offset = line2byte(line + 1)
-
-    if offset == -1
-        " in case completion is on the last row
-        let offset = line2byte(line('$') + 1)
-    endif
+    let stdin_lines = join(getline(1, "$"), "\n").a:base
+    let offset = len(stdin_lines)
 
     exec "startinsert!"
 "    echomsg getline(line)
@@ -482,8 +486,8 @@ function! rtags#CompleteAtCursor(wordStart, base)
     " sed command to remove CDATA prefix and closing xml tag from rtags output
     let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
     let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-"    echomsg cmd
-"    sleep 1
+    call rtags#Log("Command line:".cmd)
+
     let result = split(system(cmd, stdin_lines), '\n\+')
 "    echomsg "Got ".len(result)." completions"
 "    sleep 1
@@ -497,13 +501,6 @@ function! rtags#CompleteAtCursor(wordStart, base)
 "    call rtags#DisplayResults(result)
 endfunction
 
-if !exists("g:rtagsLog")
-    let g:rtagsLog = "/tmp/rtags.log"
-endif
-
-function! rtags#Log(message)
-    call writefile([string(a:message)], g:rtagsLog, "a")
-endfunction
 
 """
 " Temporarily the way this function works is:
@@ -521,57 +518,42 @@ endfunction
 function! RtagsCompleteFunc(findstart, base)
     call rtags#Log("RtagsCompleteFunc: [".a:findstart."], [".a:base."]")
     if a:findstart
-        " todo: find word start
-        exec "normal \<Esc>"
-        let cword = expand("<cword>")
-        exec "startinsert!"
-        call rtags#Log("CWORD [".cword."]")
-        let wordstart = strridx(getline('.'), cword)
-"        if index([ '.', '->', '::' ], cword) != -1
-"            let wordstart += 1
-"        endif
-"        echomsg wordstart
-"        sleep 2
-
-        return wordstart
+        " got from RipRip/clang_complete
+        let l:line = getline('.')
+        let l:start = col('.') - 1
+        let l:wsstart = l:start
+        if l:line[l:wsstart - 1] =~ '\s'
+            while l:wsstart > 0 && l:line[l:wsstart - 1] =~ '\s'
+                let l:wsstart -= 1
+            endwhile
+        endif
+        while l:start > 0 && l:line[l:start - 1] =~ '\i'
+            let l:start -= 1
+        endwhile
+        let b:col = l:start + 1
+        call rtags#Log("column:".b:col)
+        call rtags#Log("start:".l:start)
+        return l:start
     else
         let wordstart = getpos('.')[0]
-
-        " this is the case when completion invoked right after the dot
-"        if index([ '.', '->', '::' ], a:base) != -1
-        if a:base == ""
-            let wordstart += 1
-        endif
-
-"        let cdata_pivot = 'CDATA['
         let completeopts = rtags#CompleteAtCursor(wordstart, a:base)
+        "call rtags#Log(completeopts)
         let a = []
-            for line in completeopts
-"                let cdata_pos = stridx(line, cdata_pivot)
-"                if cdata_pos != -1
-"                    let line = strpart(line, cdata_pos + strlen(cdata_pivot))
-"                endif
-"                echo line
-"                sleep 1
-                " remove lines with closing </completions> tag
-"                if stridx(line, "completions>") != -1
-"                    continue
-"                endif
-
-                let option = split(line)
-                if a:base != "" && stridx(option[0], a:base) != 0
-                    continue
-                endif
-                let match = {}
-                let match.word = option[0]
-                let match.kind = option[len(option) - 1]
-                if match.kind == "CXXMethod"
-                    let match.word = match.word.'('
-                endif
-                let match.menu = join(option[1:len(option) - 1], ' ')
-                call add(a, match)
-                "call rtags#Log(match)
-            endfor
+        for line in completeopts
+            let option = split(line)
+            if a:base != "" && stridx(option[0], a:base) != 0
+                continue
+            endif
+            let match = {}
+            let match.word = option[0]
+            let match.kind = option[len(option) - 1]
+            if match.kind == "CXXMethod"
+                let match.word = match.word.'('
+            endif
+            let match.menu = join(option[1:len(option) - 1], ' ')
+            call add(a, match)
+            "call rtags#Log(match)
+        endfor
         return a
     endif
 endfunction
