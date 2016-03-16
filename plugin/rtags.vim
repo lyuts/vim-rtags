@@ -72,9 +72,19 @@ function! rtags#ExecuteRC(args, ...)
 
     " Give rdm unsaved file content, so that you don't have to save files
     " before each rc invocation.
-    let unsaved_content = join(getline(1, line('$')), "\n")
-    let filename = expand("%")
-    let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+    if exists('b:rtags_sent_content')
+        let content = join(getline(1, line('$')), "\n")
+        if b:rtags_sent_content != content
+            let unsaved_content = content
+        endif
+    elseif &modified
+        let unsaved_content = join(getline(1, line('$')), "\n")
+    endif
+    if exists('unsaved_content')
+        let filename = expand("%")
+        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let b:rtags_sent_content = unsaved_content
+    endif
 
     " prepare for the actual command invocation
     if a:0 > 0
