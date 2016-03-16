@@ -198,14 +198,22 @@ endfunction
 
 function! rtags#jumpToLocation(file, line, col)
     call rtags#saveLocation()
-    call rtags#jumpToLocationInternal(a:file, a:line, a:col)
+    return rtags#jumpToLocationInternal(a:file, a:line, a:col)
 endfunction
 
 function! rtags#jumpToLocationInternal(file, line, col)
-    if a:file != expand("%:p")
-        exe "e ".a:file
-    endif
-    call cursor(a:line, a:col)
+    try
+        if a:file != expand("%:p")
+            exe "e ".a:file
+        endif
+        call cursor(a:line, a:col)
+        return 1
+    catch /.*/
+        echohl ErrorMsg
+        echomsg v:exception
+        echohl None
+        return 0
+    endtry
 endfunction
 
 
@@ -226,8 +234,9 @@ function! rtags#JumpTo(...)
 
         " Add location to the jumplist
         normal m'
-        call rtags#jumpToLocation(jump_file, lnum, col)
-        normal zz
+        if rtags#jumpToLocation(jump_file, lnum, col)
+            normal zz
+        endif
     endif
 endfunction
 
@@ -287,8 +296,9 @@ function! rtags#JumpToParent(...)
 
                 " Add location to the jumplist
                 normal m'
-                call rtags#jumpToLocation(jump_file, lnum, col)
-                normal zz
+                if rtags#jumpToLocation(jump_file, lnum, col)
+                    normal zz
+                endif
                 return
             endif
         endif
@@ -310,7 +320,9 @@ function! rtags#RenameSymbolUnderCursor()
         let yesToAll = 0
         if !empty(newName)
             for loc in reverse(locations)
-                call rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
+                if !rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
+                    return
+                fi
                 normal zv
                 normal zz
                 redraw
