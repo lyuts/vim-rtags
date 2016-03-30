@@ -11,7 +11,7 @@ if !exists("g:rtagsExcludeSysHeaders")
     let g:rtagsExcludeSysHeaders = 0
 endif
 
-let g:jumpStack = []
+let g:rtagsJumpStack = []
 
 if !exists("g:rtagsUseLocationList")
     let g:rtagsUseLocationList = 1
@@ -254,14 +254,16 @@ function! rtags#saveLocation()
 endfunction
 
 function! rtags#pushToStack(location)
-  if len(g:jumpStack) < 100
-    call add(g:jumpStack, a:location)
+  let jumpListLen = len(g:rtagsJumpStack) 
+  if jumpListLen > 100
+    call remove(g:rtagsJumpStack, 0)
   endif
+  call add(g:rtagsJumpStack, a:location)
 endfunction
 
 function! rtags#JumpBack()
-  if len(g:jumpStack) > 0
-    let [jump_file, lnum, col] = remove(g:jumpStack, -1)
+  if len(g:rtagsJumpStack) > 0
+    let [jump_file, lnum, col] = remove(g:rtagsJumpStack, -1)
     call rtags#jumpToLocation(jump_file, lnum, col)
   else
     echo "rtags: jump stack is empty"
