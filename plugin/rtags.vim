@@ -228,7 +228,7 @@ function! rtags#JumpTo(...)
         let [jump_file, lnum, col; rest] = split(location, ':')
 
         " Add location to the jumplist
-        call rtags#pushToStack([jump_file, lnum, col])
+        call rtags#saveLocation()
         normal m'
         call rtags#jumpToLocation(jump_file, lnum, col)
         normal zz
@@ -248,6 +248,11 @@ function! rtags#parseSourceLocation(string)
     return ["","",""]
 endfunction
 
+function! rtags#saveLocation()
+  let [lnum, col] = getpos('.')[1:2]
+  call rtags#pushToStack([expand("%"), lnum, col])
+endfunction
+
 function! rtags#pushToStack(location)
   if len(g:jumpStack) < 100
     call add(g:jumpStack, a:location)
@@ -258,6 +263,8 @@ function! rtags#JumpBack()
   if len(g:jumpStack) > 0
     let [jump_file, lnum, col] = remove(g:jumpStack, -1)
     call rtags#jumpToLocation(jump_file, lnum, col)
+  else
+    echo "rtags: jump stack is empty"
   endif
 endfunction
 
@@ -281,7 +288,7 @@ function! rtags#JumpToParent(...)
                 endif
 
                 " Add location to the jumplist
-                call rtags#pushToStack([jump_file, lnum, col])
+                call rtags#saveLocation()
                 normal m'
                 call rtags#jumpToLocation(jump_file, lnum, col)
                 normal zz
