@@ -11,6 +11,8 @@ if !exists("g:rtagsExcludeSysHeaders")
     let g:rtagsExcludeSysHeaders = 0
 endif
 
+let g:jumpStack = []
+
 if !exists("g:rtagsUseLocationList")
     let g:rtagsUseLocationList = 1
 endif
@@ -41,6 +43,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rl :call rtags#ProjectList()<CR>
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
+    noremap <Leader>rb :call rtags#JumpBack()<CR>
 endif
 
 " LineCol2Offset {{{
@@ -225,6 +228,7 @@ function! rtags#JumpTo(...)
         let [jump_file, lnum, col; rest] = split(location, ':')
 
         " Add location to the jumplist
+        call rtags#pushToStack([jump_file, lnum, col])
         normal m'
         call rtags#jumpToLocation(jump_file, lnum, col)
         normal zz
@@ -242,6 +246,19 @@ function! rtags#parseSourceLocation(string)
         endif
     endif
     return ["","",""]
+endfunction
+
+function! rtags#pushToStack(location)
+  if len(g:jumpStack) < 100
+    call add(g:jumpStack, a:location)
+  endif
+endfunction
+
+function! rtags#JumpBack()
+  if len(g:jumpStack) > 0
+    let [jump_file, lnum, col] = remove(g:jumpStack, -1)
+    call rtags#jumpToLocation(jump_file, lnum, col)
+  endif
 endfunction
 
 function! rtags#JumpToParent(...)
@@ -264,6 +281,7 @@ function! rtags#JumpToParent(...)
                 endif
 
                 " Add location to the jumplist
+                call rtags#pushToStack([jump_file, lnum, col])
                 normal m'
                 call rtags#jumpToLocation(jump_file, lnum, col)
                 normal zz
