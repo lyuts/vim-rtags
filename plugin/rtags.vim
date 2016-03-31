@@ -7,6 +7,10 @@ if !exists("g:rtagsRcCmd")
     let g:rtagsRcCmd = "rc"
 endif
 
+if !exists("g:rtagsJumpStackMaxSize")
+    let g:rtagsJumpStackMaxSize = 100
+endif
+
 if !exists("g:rtagsExcludeSysHeaders")
     let g:rtagsExcludeSysHeaders = 0
 endif
@@ -206,11 +210,17 @@ function! rtags#cloneCurrentBuffer(type)
 endfunction
 
 function! rtags#jumpToLocation(file, line, col)
+    call rtags#saveLocation()
+    call rtags#jumpToLocationInternal(a:file, a:line, a:col)
+endfunction
+
+function! rtags#jumpToLocationInternal(file, line, col)
     if a:file != expand("%:p")
         exe "e ".a:file
     endif
     call cursor(a:line, a:col)
 endfunction
+
 
 function! rtags#JumpTo(...)
     let args = {}
@@ -228,7 +238,6 @@ function! rtags#JumpTo(...)
         let [jump_file, lnum, col; rest] = split(location, ':')
 
         " Add location to the jumplist
-        call rtags#saveLocation()
         normal m'
         call rtags#jumpToLocation(jump_file, lnum, col)
         normal zz
@@ -255,7 +264,7 @@ endfunction
 
 function! rtags#pushToStack(location)
   let jumpListLen = len(g:rtagsJumpStack) 
-  if jumpListLen > 100
+  if jumpListLen > g:rtagsJumpStackMaxSize
     call remove(g:rtagsJumpStack, 0)
   endif
   call add(g:rtagsJumpStack, a:location)
@@ -264,7 +273,7 @@ endfunction
 function! rtags#JumpBack()
   if len(g:rtagsJumpStack) > 0
     let [jump_file, lnum, col] = remove(g:rtagsJumpStack, -1)
-    call rtags#jumpToLocation(jump_file, lnum, col)
+    call rtags#jumpToLocationInternal(jump_file, lnum, col)
   else
     echo "rtags: jump stack is empty"
   endif
@@ -290,7 +299,6 @@ function! rtags#JumpToParent(...)
                 endif
 
                 " Add location to the jumplist
-                call rtags#saveLocation()
                 normal m'
                 call rtags#jumpToLocation(jump_file, lnum, col)
                 normal zz
@@ -311,7 +319,7 @@ function! rtags#RenameSymbolUnderCursor()
         let yesToAll = 0
         if !empty(newName)
             for loc in reverse(locations)
-                call rtags#jumpToLocation(loc.filepath, loc.lnum, loc.col)
+                call rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
                 normal zv
                 normal zz
                 redraw
