@@ -308,6 +308,10 @@ function! rtags#JumpToParent(...)
     endfor
 endfunction
 
+function! s:GetCharacterUnderCursor()
+    return matchstr(getline('.'), '\%' . col('.') . 'c.')
+endfunction
+
 function! rtags#RenameSymbolUnderCursor()
     let args = {}
     let args.e = ''
@@ -334,6 +338,10 @@ function! rtags#RenameSymbolUnderCursor()
                     let yesToAll = 1
                 endif
                 if choice == 1
+                    " Special case for destructors
+                    if s:GetCharacterUnderCursor() == '~'
+                        normal l
+                    endif
                     exec "normal ciw".newName."\<Esc>"
                     write!
                 elseif choice == 4
