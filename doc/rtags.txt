@@ -79,6 +79,13 @@ g:rtagsMaxSearchResultWindowHeight
     results is less than this parameter, the height is set to the number of
     results.
 
+                                              *g:rtagsLog*
+                                              *rtags-variable-rtags-log*
+g:rtagsLog
+
+    Default: empty
+    When set to filename, rtags will put it's logs in that file.
+
                                                                 *rtags-mappings*
 4. Mappings
                                                               *rtags-leader-ri*
