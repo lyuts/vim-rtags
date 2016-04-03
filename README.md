@@ -89,9 +89,33 @@ unstable, but if you want to try it you will have to set ```completefunc``` by
 
     set completefunc=RtagsCompleteFunc
 
+Also ```RtagsCompleteFunc``` can be used as omnifunc. For example, you can use
+such approach with [neocomplete](https://github.com/Shougo/neocomplete.vim)(for more details read it's docs):
+
+```
+function! SetupNeocomleteForCppWithRtags()
+    " Enable heavy omni completion.
+    setlocal omnifunc=RtagsCompleteFunc
+
+    if !exists('g:neocomplete#sources#omni#input_patterns')
+        let g:neocomplete#sources#omni#input_patterns = {}
+    endif
+    let l:cpp_patterns='[^.[:digit:] *\t]\%(\.\|->\)\|\h\w*::'
+    let g:neocomplete#sources#omni#input_patterns.cpp = l:cpp_patterns 
+    set completeopt+=longest,menuone
+endfunction
+
+autocmd FileType cpp,c call SetupNeocomleteForCppWithRtags()
+
+```
+Such config provides automatic calls, of omnicompletion on c and cpp entity accessors.
+
+### Current limitations
+* There are no support for ovveriden functions and methods
+* Thre are no support for function's arguments completion
+
 # Notes
 1. This plugin is wip.
-1. Code completion with rtags is not done yet. Completion does not work when invoked right after '.' (dot), '::' (scope resolution operator), therefore requires typing at least one character before invocation.
 
 # Development
 Unit tests for some plugin functions can be found in ```tests``` directory.
