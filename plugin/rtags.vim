@@ -59,38 +59,6 @@ function! rtags#Log(message)
     endif
 endfunction
 
-" LineCol2Offset {{{
-" return Byte offset in the file for the current cursor position
-function! LineCol2Offset()
-    return line2byte('.') + col('.') - 1
-endfunction
-" }}}
-
-" Offset2LineCol: {{{
-" param filepath - fullpath to a file
-" param offset - byte offset in the file
-" returns [ line #, column # ]
-function! Offset2LineCol(filepath, offset)
-python << endscript
-import vim
-f = open(vim.eval("a:filepath"))
-
-row = 1
-offset = int(vim.eval("a:offset"))
-for line in f:
-    if offset <= len(line):
-        col = offset
-        break
-    else:
-        offset -= len(line)
-        row += 1
-
-f.close()
-vim.command("return [%d, %s]" % (row, col))
-endscript
-endfunction
-" }}}
-
 "
 " Executes rc with given arguments and returns rc output
 "
