@@ -1,8 +1,4 @@
 
-if !has("python")
-    echohl ErrorMsg | echomsg "[vim-rtags] Python support is disabled!" | echohl None
-endif
-
 if !exists("g:rtagsRcCmd")
     let g:rtagsRcCmd = "rc"
 endif
