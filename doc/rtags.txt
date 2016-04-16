@@ -112,9 +112,9 @@ g:rtagsLog
 
                                                             *rtags-leader-rp*
                                                             *rtags-JumpToParent*
-    <Leader>rp      Jump to and entity that contains the symbol under the
+    <Leader>rp      Jump to an entity that contains the symbol under the
                     cursor, e.g. jump to the beginning of a function that has
-                    the local variable under a cursor, or jumpt to the class
+                    the local variable under a cursor, or jump to the class
                     that defines a member function under a cursor, etc.
 
 

@@ -72,9 +72,19 @@ function! rtags#ExecuteRC(args, ...)
 
     " Give rdm unsaved file content, so that you don't have to save files
     " before each rc invocation.
-    let unsaved_content = join(getline(1, line('$')), "\n")
-    let filename = expand("%")
-    let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+    if exists('b:rtags_sent_content')
+        let content = join(getline(1, line('$')), "\n")
+        if b:rtags_sent_content != content
+            let unsaved_content = content
+        endif
+    elseif &modified
+        let unsaved_content = join(getline(1, line('$')), "\n")
+    endif
+    if exists('unsaved_content')
+        let filename = expand("%")
+        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let b:rtags_sent_content = unsaved_content
+    endif
 
     " prepare for the actual command invocation
     if a:0 > 0
@@ -188,14 +198,22 @@ endfunction
 
 function! rtags#jumpToLocation(file, line, col)
     call rtags#saveLocation()
-    call rtags#jumpToLocationInternal(a:file, a:line, a:col)
+    return rtags#jumpToLocationInternal(a:file, a:line, a:col)
 endfunction
 
 function! rtags#jumpToLocationInternal(file, line, col)
-    if a:file != expand("%:p")
-        exe "e ".a:file
-    endif
-    call cursor(a:line, a:col)
+    try
+        if a:file != expand("%:p")
+            exe "e ".a:file
+        endif
+        call cursor(a:line, a:col)
+        return 1
+    catch /.*/
+        echohl ErrorMsg
+        echomsg v:exception
+        echohl None
+        return 0
+    endtry
 endfunction
 
 
@@ -216,8 +234,9 @@ function! rtags#JumpTo(...)
 
         " Add location to the jumplist
         normal m'
-        call rtags#jumpToLocation(jump_file, lnum, col)
-        normal zz
+        if rtags#jumpToLocation(jump_file, lnum, col)
+            normal zz
+        endif
     endif
 endfunction
 
@@ -277,8 +296,9 @@ function! rtags#JumpToParent(...)
 
                 " Add location to the jumplist
                 normal m'
-                call rtags#jumpToLocation(jump_file, lnum, col)
-                normal zz
+                if rtags#jumpToLocation(jump_file, lnum, col)
+                    normal zz
+                endif
                 return
             endif
         endif
@@ -300,7 +320,9 @@ function! rtags#RenameSymbolUnderCursor()
         let yesToAll = 0
         if !empty(newName)
             for loc in reverse(locations)
-                call rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
+                if !rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
+                    return
+                fi
                 normal zv
                 normal zz
                 redraw
