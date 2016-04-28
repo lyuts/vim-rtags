@@ -318,7 +318,7 @@ function! rtags#RenameSymbolUnderCursor()
             for loc in reverse(locations)
                 if !rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
                     return
-                fi
+                endif
                 normal zv
                 normal zz
                 redraw
