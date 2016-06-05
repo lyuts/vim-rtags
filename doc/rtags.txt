@@ -96,6 +96,10 @@ g:rtagsLog
                                                                *rtags-JumpTo*
     <Leader>rj      Jump to declaration/definition.
 
+                                                               *rtags-leader-rJ*
+                                                             *rtags-JumpTo-Decl*
+    <Leader>rJ      Jump to declaration.
+
                                                             *rtags-leader-rS*
                                                             *rtags-JumpTo-Split*
     <Leader>rS      Same as <Leader>rj, but opens target location in a

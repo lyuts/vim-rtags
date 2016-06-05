@@ -60,6 +60,7 @@ It is possible to set its maximum size (number of entries), default is 100:
 |------------------|----------------------------------|--------------------------------------------|
 | &lt;Leader&gt;ri | -U                               | Symbol info                                |
 | &lt;Leader&gt;rj | -f                               | Follow location                            |
+| &lt;Leader&gt;rJ | -f --declaration-only            | Follow declaration location                |
 | &lt;Leader&gt;rS | -f                               | Follow location (open in horizontal split) |
 | &lt;Leader&gt;rV | -f                               | Follow location (open in vertical split)   |
 | &lt;Leader&gt;rT | -f                               | Follow location open in a new tab          |

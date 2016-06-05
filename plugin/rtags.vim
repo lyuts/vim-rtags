@@ -44,6 +44,7 @@ let s:LOC_OPEN_OPTS = {
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo(g:SAME_WINDOW)<CR>
+    noremap <Leader>rJ :call rtags#JumpTo(g:SAME_WINDOW, 'declaration-only')<CR>
     noremap <Leader>rS :call rtags#JumpTo(g:H_SPLIT)<CR>
     noremap <Leader>rV :call rtags#JumpTo(g:V_SPLIT)<CR>
     noremap <Leader>rT :call rtags#JumpTo(g:NEW_TAB)<CR>
@@ -228,11 +229,25 @@ function! rtags#jumpToLocationInternal(file, line, col)
     endtry
 endfunction
 
-
-function! rtags#JumpTo(open_opt)
+"
+" JumpTo(open_type, ...)
+"     open_type - Vim command used for opening desired location.
+"     Allowed values:
+"       * g:SAME_WINDOW
+"       * g:H_SPLIT
+"       * g:V_SPLIT
+"       * g:NEW_TAB
+"
+"     a:000 - list of long options for rc without leading dashes ('--')
+"
+function! rtags#JumpTo(open_opt, ...)
     let args = {}
     let args.f = rtags#getCurrentLocation()
-    let results = rtags#ExecuteRC(args)
+    let rcLongOpts = []
+    if a:0 > 0
+        let rcLongOpts = a:000
+    endif
+    let results = rtags#ExecuteRC(args, rcLongOpts)
 
     if len(results) >= 0 && a:open_opt != g:SAME_WINDOW
         call rtags#cloneCurrentBuffer(a:open_opt)
