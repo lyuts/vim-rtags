@@ -29,12 +29,24 @@ if !exists("g:rtagsMaxSearchResultWindowHeight")
     let g:rtagsMaxSearchResultWindowHeight = 10
 endif
 
+let g:SAME_WINDOW = 'same_window'
+let g:H_SPLIT = 'hsplit'
+let g:V_SPLIT = 'vsplit'
+let g:NEW_TAB = 'tab'
+
+let s:LOC_OPEN_OPTS = {
+            \ g:SAME_WINDOW : '',
+            \ g:H_SPLIT : ' ',
+            \ g:V_SPLIT : 'vert',
+            \ g:NEW_TAB : 'tab'
+            \ }
+
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
-    noremap <Leader>rj :call rtags#JumpTo()<CR>
-    noremap <Leader>rS :call rtags#JumpTo(" ")<CR>
-    noremap <Leader>rV :call rtags#JumpTo("vert")<CR>
-    noremap <Leader>rT :call rtags#JumpTo("tab")<CR>
+    noremap <Leader>rj :call rtags#JumpTo(g:SAME_WINDOW)<CR>
+    noremap <Leader>rS :call rtags#JumpTo(g:H_SPLIT)<CR>
+    noremap <Leader>rV :call rtags#JumpTo(g:V_SPLIT)<CR>
+    noremap <Leader>rT :call rtags#JumpTo(g:NEW_TAB)<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
@@ -187,8 +199,12 @@ function! rtags#SymbolInfo()
 endfunction
 
 function! rtags#cloneCurrentBuffer(type)
+    if a:type == g:SAME_WINDOW
+        return
+    endif
+
     let [lnum, col] = getpos('.')[1:2]
-    exec a:type." new ".expand("%")
+    exec s:LOC_OPEN_OPTS[a:type]." new ".expand("%")
     call cursor(lnum, col)
 endfunction
 
@@ -213,13 +229,13 @@ function! rtags#jumpToLocationInternal(file, line, col)
 endfunction
 
 
-function! rtags#JumpTo(...)
+function! rtags#JumpTo(open_opt)
     let args = {}
     let args.f = rtags#getCurrentLocation()
     let results = rtags#ExecuteRC(args)
 
-    if len(results) >= 0 && a:0 > 0
-        call rtags#cloneCurrentBuffer(a:1)
+    if len(results) >= 0 && a:open_opt != g:SAME_WINDOW
+        call rtags#cloneCurrentBuffer(a:open_opt)
     endif
 
     if len(results) > 1
