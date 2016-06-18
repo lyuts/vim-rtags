@@ -57,6 +57,8 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
     noremap <Leader>rv :call rtags#FindVirtuals()<CR>
     noremap <Leader>rb :call rtags#JumpBack()<CR>
+    noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
+    noremap <Leader>rc :call rtags#FindSubClasses()<CR>
 endif
 
 """
@@ -149,6 +151,77 @@ function! rtags#ParseResults(results)
 endfunction
 
 "
+" Converts a class hierarchy of 'rc --class-hierarchy' like:
+"
+" Superclasses:
+"   class Foo src/Foo.h:56:7: class Foo : public Bar {
+"     class Bar	src/Bar.h:46:7:	class Bar : public Bas {
+"       class Bas src/Bas.h:47:7: class Bas {
+" Subclasses:
+"   class Foo src/Foo.h:56:7: class Foo : public Bar {
+"     class Foo2 src/Foo2.h:56:7: class Foo2 : public Foo {
+"     class Foo3 src/Foo3.h:56:7: class Foo3 : public Foo {
+"
+" into the super classes:
+"
+" src/Foo.h:56:7: class Foo : public Bar {
+" src/Bar.h:46:7: class Bar : public Bas {
+" src/Bas.h:47:7: class Bas {
+"
+function! rtags#ExtractSuperClasses(results)
+    let extracted = []
+    for line in a:results
+        if line == "Superclasses:"
+            continue
+        endif
+
+        if line == "Subclasses:"
+            break
+        endif
+
+        let extLine = substitute(line, '\s\+class\s\+[a-zA-Z0-9_]\+\s\+', '', '')
+        call add(extracted, extLine)
+    endfor
+    return extracted
+endfunction
+
+"
+" Converts a class hierarchy of 'rc --class-hierarchy' like:
+"
+" Superclasses:
+"   class Foo src/Foo.h:56:7: class Foo : public Bar {
+"     class Bar	src/Bar.h:46:7:	class Bar : public Bas {
+"       class Bas src/Bas.h:47:7: class Bas {
+" Subclasses:
+"   class Foo src/Foo.h:56:7: class Foo : public Bar {
+"     class Foo2 src/Foo2.h:56:7: class Foo2 : public Foo {
+"     class Foo3 src/Foo3.h:56:7: class Foo3 : public Foo {
+"
+" into the sub classes:
+"
+" src/Foo.h:56:7: class Foo : public Bar {
+" src/Foo2.h:56:7: class Foo2 : public Foo {
+" src/Foo3.h:56:7: class Foo3 : public Foo {
+"
+function! rtags#ExtractSubClasses(results)
+    let extracted = []
+    let atSubClasses = 0
+    for line in a:results
+        if atSubClasses == 0
+           if line == "Subclasses:"
+              let atSubClasses = 1
+           endif
+
+           continue
+        endif
+
+        let extLine = substitute(line, '\s\+class\s\+[a-zA-Z0-9_]\+\s\+', '', '')
+        call add(extracted, extLine)
+    endfor
+    return extracted
+endfunction
+
+"
 " param[in] results - List of locations, one per line
 "
 " Format of each line: <path>,<line>\s<text>
@@ -234,8 +307,9 @@ function! rtags#JumpTo(open_opt, ...)
     let args = {}
     if a:0 > 0
         let args = a:1
+    endif
 
-    let args.f = rtags#getCurrentLocation()
+    call extend(args, { '-f' : rtags#getCurrentLocation() })
     let results = rtags#ExecuteRC(args)
 
     if len(results) >= 0 && a:open_opt != g:SAME_WINDOW
@@ -375,6 +449,18 @@ function! rtags#FindRefs()
 
     let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
+endfunction
+
+function! rtags#FindSuperClasses()
+    let result = rtags#ExecuteRC({ '--class-hierarchy' : rtags#getCurrentLocation() })
+    let classes = rtags#ExtractSuperClasses(result)
+    call rtags#DisplayResults(classes)
+endfunction
+
+function! rtags#FindSubClasses()
+    let result = rtags#ExecuteRC({ '--class-hierarchy' : rtags#getCurrentLocation() })
+    let classes = rtags#ExtractSubClasses(result)
+    call rtags#DisplayResults(classes)
 endfunction
 
 function! rtags#FindVirtuals()
