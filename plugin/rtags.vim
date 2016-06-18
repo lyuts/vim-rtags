@@ -44,7 +44,7 @@ let s:LOC_OPEN_OPTS = {
 if g:rtagsUseDefaultMappings == 1
     noremap <Leader>ri :call rtags#SymbolInfo()<CR>
     noremap <Leader>rj :call rtags#JumpTo(g:SAME_WINDOW)<CR>
-    noremap <Leader>rJ :call rtags#JumpTo(g:SAME_WINDOW, 'declaration-only')<CR>
+    noremap <Leader>rJ :call rtags#JumpTo(g:SAME_WINDOW, { '--declaration-only' : '' })<CR>
     noremap <Leader>rS :call rtags#JumpTo(g:H_SPLIT)<CR>
     noremap <Leader>rV :call rtags#JumpTo(g:V_SPLIT)<CR>
     noremap <Leader>rT :call rtags#JumpTo(g:NEW_TAB)<CR>
@@ -72,11 +72,9 @@ endfunction
 " Executes rc with given arguments and returns rc output
 "
 " param[in] args - dictionary of arguments
-" param[in] ...
-"   param a:1 - list of long arguments (e.g. --cursorinfo-include-parents)
 "-
 " return output split by newline
-function! rtags#ExecuteRC(args, ...)
+function! rtags#ExecuteRC(args)
     let cmd = rtags#getRcCmd()
 
     " Give rdm unsaved file content, so that you don't have to save files
@@ -96,14 +94,8 @@ function! rtags#ExecuteRC(args, ...)
     endif
 
     " prepare for the actual command invocation
-    if a:0 > 0
-        let longArgs = a:1
-        for longArg in longArgs
-            let cmd .= " --".longArg." "
-        endfor
-    endif
     for [key, value] in items(a:args)
-        let cmd .= " -".key
+        let cmd .= " ".key
         if len(value) > 1
             let cmd .= " ".value
         endif
@@ -191,9 +183,7 @@ function! rtags#getCurrentLocation()
 endfunction
 
 function! rtags#SymbolInfo()
-    let args = {}
-    let args.U = rtags#getCurrentLocation()
-    let output = rtags#ExecuteRC(args)
+    let output = rtags#ExecuteRC({ '-U' : rtags#getCurrentLocation() })
     for line in output
         echo line
     endfor
@@ -238,16 +228,15 @@ endfunction
 "       * g:V_SPLIT
 "       * g:NEW_TAB
 "
-"     a:000 - list of long options for rc without leading dashes ('--')
+"     a:1 - dictionary of additional arguments for 'rc'
 "
 function! rtags#JumpTo(open_opt, ...)
     let args = {}
-    let args.f = rtags#getCurrentLocation()
-    let rcLongOpts = []
     if a:0 > 0
-        let rcLongOpts = a:000
-    endif
-    let results = rtags#ExecuteRC(args, rcLongOpts)
+        let args = a:1
+
+    let args.f = rtags#getCurrentLocation()
+    let results = rtags#ExecuteRC(args)
 
     if len(results) >= 0 && a:open_opt != g:SAME_WINDOW
         call rtags#cloneCurrentBuffer(a:open_opt)
@@ -303,11 +292,11 @@ function! rtags#JumpBack()
 endfunction
 
 function! rtags#JumpToParent(...)
-    let args = {}
-    let args.U = rtags#getCurrentLocation()
-    let longArgs = ["symbol-info-include-parents"]
-    let results = rtags#ExecuteRC(args, longArgs)
+    let args = {
+        \ '-U' : rtags#getCurrentLocation(),
+        \ '--symbol-info-include-parents' : '' }
 
+    let results = rtags#ExecuteRC(args)
     let parentSeparator = "===================="
     let parentSeparatorPassed = 0
     for line in results
@@ -337,11 +326,12 @@ function! s:GetCharacterUnderCursor()
 endfunction
 
 function! rtags#RenameSymbolUnderCursor()
-    let args = {}
-    let args.e = ''
-    let args.r = rtags#getCurrentLocation()
-    let longArgs = ["rename"]
-    let locations = rtags#ParseResults(rtags#ExecuteRC(args, longArgs))
+    let args = {
+        \ '-e' : '',
+        \ '-r' : rtags#getCurrentLocation(),
+        \ '--rename' : '' }
+
+    let locations = rtags#ParseResults(rtags#ExecuteRC(args))
     if len(locations) > 0
         let newName = input("Enter new name: ")
         let yesToAll = 0
@@ -379,29 +369,42 @@ function! rtags#RenameSymbolUnderCursor()
 endfunction
 
 function! rtags#FindRefs()
-    let args = {}
-    let args.e = ''
-    let args.r = rtags#getCurrentLocation()
+    let args = {
+        \ '-e' : '',
+        \ '-r' : rtags#getCurrentLocation() }
+
     let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
 function! rtags#FindVirtuals()
-    let args = {}
-    let args.k = ''
-    let args.r = rtags#getCurrentLocation()
+    let args = {
+        \ '-k' : '',
+        \ '-r' : rtags#getCurrentLocation() }
+
     let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
 function! rtags#FindRefsByName(name)
-    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name })
+    let args = {
+        \ '-a' : '',
+        \ '-e' : '',
+        \ '-R' : a:name }
+
+    let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
 " case insensitive FindRefsByName
 function! rtags#IFindRefsByName(name)
-    let result = rtags#ExecuteRC({ 'ae' : '', 'R' : a:name, 'I' : '' })
+    let args = {
+        \ '-a' : '',
+        \ '-e' : '',
+        \ '-R' : a:name,
+        \ '-I' : '' }
+
+    let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
@@ -414,7 +417,11 @@ endfunction
 
 """ rc -HF <pattern>
 function! rtags#FindSymbols(pattern)
-    let result = rtags#ExecuteRC({ 'aF' : a:pattern })
+    let args = {
+        \ '-a' : '',
+        \ '-F' : a:pattern }
+
+    let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
@@ -423,18 +430,23 @@ function! rtags#CompleteSymbols(arg, line, pos)
     if len(a:arg) < g:rtagsMinCharsForCommandCompletion
         return []
     endif
-    let result = rtags#ExecuteRC({ 'S' : a:arg })
+    let result = rtags#ExecuteRC({ '-S' : a:arg })
     return filter(result, 'v:val !~ "("')
 endfunction
 
 " case insensitive FindSymbol
 function! rtags#IFindSymbols(pattern)
-    let result = rtags#ExecuteRC({ 'aIF' : a:pattern })
+    let args = {
+        \ '-a' : '',
+        \ '-I' : '',
+        \ '-F' : a:pattern }
+
+    let result = rtags#ExecuteRC(args)
     call rtags#DisplayResults(result)
 endfunction
 
 function! rtags#ProjectList()
-    let projects = rtags#ExecuteRC({'w' : ''})
+    let projects = rtags#ExecuteRC({ '-w' : '' })
     let i = 1
     for p in projects
         echo '['.i.'] '.p
@@ -447,25 +459,25 @@ function! rtags#ProjectList()
 endfunction
 
 function! rtags#ProjectOpen(pattern)
-    call rtags#ExecuteRC({ 'w' : a:pattern })
+    call rtags#ExecuteRC({ '-w' : a:pattern })
 endfunction
 
 function! rtags#LoadCompilationDb(pattern)
-    call rtags#ExecuteRC({ 'J' : a:pattern })
+    call rtags#ExecuteRC({ '-J' : a:pattern })
 endfunction
 
 function! rtags#ProjectClose(pattern)
-    call rtags#ExecuteRC({ 'u' : a:pattern })
+    call rtags#ExecuteRC({ '-u' : a:pattern })
 endfunction
 
 function! rtags#PreprocessFile()
-    let result = rtags#ExecuteRC({ 'E' : expand("%:p") })
+    let result = rtags#ExecuteRC({ '-E' : expand("%:p") })
     vnew
     call append(0, result)
 endfunction
 
 function! rtags#ReindexFile()
-    call rtags#ExecuteRC({ 'V' : expand("%:p") })
+    call rtags#ExecuteRC({ '-V' : expand("%:p") })
 endfunction
 
 function! rtags#FindSymbolsOfWordUnderCursor()
