@@ -160,6 +160,14 @@ g:rtagsLog
     <Leader>rv      Find other implementations of a function, such as virtual
                     functions.
 
+							    *rtags-leader-rC*
+                                                            *rtags-FindSuperClasses*
+    <Leader>rC      Find the super classes of the class under the cursor.
+
+							    *rtags-leader-rc*
+                                                            *rtags-FindSubClasses*
+    <Leader>rc      Find the sub classes of the class under the cursor.
+
                                                                 *rtags-commands*
 5. Commands
 
