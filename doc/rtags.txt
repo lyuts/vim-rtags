@@ -84,7 +84,7 @@ g:rtagsMaxSearchResultWindowHeight
 g:rtagsLog
 
     Default: empty
-    When set to filename, rtags will put it's logs in that file.
+    When set to filename, rtags will put its logs in that file.
 
                                                                 *rtags-mappings*
 4. Mappings
@@ -189,7 +189,7 @@ g:rtagsLog
 
         rtags/symbol        find symbol (alternative to <Leader>rs).
 
-        rtags/symbol:i      same as rtags/symbol, but for case insensitibe.
+        rtags/symbol:i      same as rtags/symbol, but for case insensitive.
 
         rtags/project       list/switch projects.
 
