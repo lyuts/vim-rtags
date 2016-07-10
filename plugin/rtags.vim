@@ -150,6 +150,10 @@ function! rtags#ParseResults(results)
     return locations
 endfunction
 
+function! rtags#ExtractClassHierarthyLine(line)
+    return substitute(a:line, '\v.*\s+(\S+:[0-9]+:[0-9+]:\s)', '\1', '')
+endfunction
+
 "
 " Converts a class hierarchy of 'rc --class-hierarchy' like:
 "
@@ -179,7 +183,7 @@ function! rtags#ExtractSuperClasses(results)
             break
         endif
 
-        let extLine = substitute(line, '\s\+class\s\+[a-zA-Z0-9_]\+\s\+', '', '')
+        let extLine = rtags#ExtractClassHierarthyLine(line)
         call add(extracted, extLine)
     endfor
     return extracted
@@ -215,7 +219,7 @@ function! rtags#ExtractSubClasses(results)
            continue
         endif
 
-        let extLine = substitute(line, '\s\+class\s\+[a-zA-Z0-9_]\+\s\+', '', '')
+        let extLine = rtags#ExtractClassHierarthyLine(line)
         call add(extracted, extLine)
     endfor
     return extracted
