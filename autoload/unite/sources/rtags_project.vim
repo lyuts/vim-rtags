@@ -14,8 +14,7 @@ let s:source_rtags_project = {
 " }}}
 
 function! s:source_rtags_project.gather_candidates(args, context)
-    let args = {}
-    let args.w = ''
+    let args = { '-w' : '' }
     let result = rtags#ExecuteRC(args)
     return map(result, "{
                 \ 'word': v:val,
@@ -25,7 +24,6 @@ function! s:source_rtags_project.gather_candidates(args, context)
 endfunction
 
 function! unite#sources#rtags_project#SetProject(name)
-    let args = {}
-    let args.w = a:name
+    let args = { '-w' : a:name}
     let result = rtags#ExecuteRC(args)
 endfunction

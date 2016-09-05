@@ -45,12 +45,11 @@ function! s:source_rtags_symbol.hooks.on_init(args, context)
 endfunction
 
 function! s:source_rtags_symbol.gather_candidates(args, context)
-    let args = {}
-    let args.a = ''
+    let args = { '-a' : '' }
     if (a:context.source__case ==# 'i')
-        let args.I = ''
+        let args['-I'] = ''
     endif
-    let args.F = a:context.source__input
+    let args['-F'] = a:context.source__input
     let result = rtags#ExecuteRC(args)
     return map(result, "{
                 \ 'word': unite#rtags#get_word(v:val),
