@@ -34,7 +34,7 @@ then while in vim run:
 # Configuration
 This plugin interacts with RTags by invoking ```rc``` commands and interpreting
 their results.  You can override the path to ```rc``` binary by setting
-```g:rcCmd``` variable.  By default, it is set to ```rc```, expecting it to be
+```g:rtagsRcCmd``` variable.  By default, it is set to ```rc```, expecting it to be
 found in the $PATH.
 
 Out of box this plugin provides mappings. In order to use custom mappings the
