@@ -345,7 +345,7 @@ endfunction
 
 function! rtags#saveLocation()
   let [lnum, col] = getpos('.')[1:2]
-  call rtags#pushToStack([expand("%"), lnum, col])
+  call rtags#pushToStack([expand("%:p"), lnum, col])
 endfunction
 
 function! rtags#pushToStack(location)
