@@ -29,9 +29,9 @@ endfunction
 
 function! s:source_rtags_references.gather_candidates(args, context)
     let a:context.source__cword = expand("<cword>")
-    let args = {}
-    let args.e = ''
-    let args.r = rtags#getCurrentLocation()
+    let args = {
+        \ '-e' : '',
+        \ '-r' : rtags#getCurrentLocation() }
     let result = rtags#ExecuteRC(args)
     return map(result, "{
                 \ 'word': unite#rtags#get_word(v:val),
