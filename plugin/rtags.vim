@@ -65,6 +65,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rb :call rtags#JumpBack()<CR>
     noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
     noremap <Leader>rc :call rtags#FindSubClasses()<CR>
+    noremap <Leader>rd :call rtags#Diagnostics()<CR>
 endif
 
 """
@@ -232,23 +233,73 @@ function! rtags#ExtractSubClasses(results)
 endfunction
 
 "
+" param[in] locations - List of locations, one per line
+"
+function! rtags#DisplayLocations(locations)
+    let num_of_locations = len(a:locations)
+    if g:rtagsUseLocationList == 1
+        call setloclist(winnr(), a:locations)
+        if num_of_locations > 0
+            exe 'lopen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
+        endif
+    else
+        call setqflist(a:locations)
+        if num_of_locations > 0
+            exe 'copen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
+        endif
+    endif
+endfunction
+
+"
 " param[in] results - List of locations, one per line
 "
 " Format of each line: <path>,<line>\s<text>
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
-    let num_of_locations = len(locations)
-    if g:rtagsUseLocationList == 1
-        call setloclist(winnr(), locations)
-        if num_of_locations > 0
-            exe 'lopen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
-        endif
-    else
-        call setqflist(locations)
-        if num_of_locations > 0
-            exe 'copen '.min([g:rtagsMaxSearchResultWindowHeight, num_of_locations]) | set nowrap
-        endif
-    endif
+    call rtags#DisplayLocations(locations)
+endfunction
+
+"
+" param[in] results - Data get by rc diagnose command (XML format)
+"
+function! rtags#DisplayDiagnosticsResults(results)
+    exe 'sign unplace *'
+    exe 'sign define fixit text=F texthl=FixIt'
+    exe 'sign define warning text=W texthl=Warning'
+    exe 'sign define error text=E texthl=Error'
+
+python3 << endpython
+import json
+import xml.etree.ElementTree as ET
+
+tree = ET.fromstring('\n'.join(vim.eval("a:results")))
+file = tree.find('file')
+errors = file.findall('error')
+name = file.get('name')
+
+quickfix_errors = []
+for i, e in enumerate(errors):
+    severity = e.get('severity')
+    if severity == 'skipped':
+        continue
+    line = e.get('line')
+    column = e.get('column')
+    message = e.get('message')
+
+    # strip error prefix
+    s = ' Issue: '
+    index = message.find(s)
+    if index != -1:
+      message = message[index + len(s):]
+
+    error_type = 'E' if severity == 'error' else 'W'
+
+    quickfix_errors.append({'lnum': line, 'col': column, 'nr': i, 'text': message, 'filename': name, 'type': error_type})
+    cmd = 'sign place %d line=%s name=%s file=%s' % (i + 1, line, severity, name)
+    vim.command(cmd)
+
+vim.eval('rtags#DisplayLocations(%s)' % json.dumps(quickfix_errors))
+endpython
 endfunction
 
 function! rtags#getRcCmd()
@@ -674,6 +725,14 @@ endfunction
 function! rtags#FindSymbolsOfWordUnderCursor()
     let wordUnderCursor = expand("<cword>")
     call rtags#FindSymbols(wordUnderCursor)
+endfunction
+
+function! rtags#Diagnostics()
+    let args = {
+                \ '--diagnose' : expand("%:p"),
+                \ '--synchronous-diagnostics' : '' }
+
+    call rtags#ExecuteThen(args, [function('rtags#DisplayDiagnosticsResults')])
 endfunction
 
 "
