@@ -56,5 +56,6 @@ function! s:source_rtags_symbol.gather_candidates(args, context)
                 \ 'action__path': unite#rtags#get_filepath(v:val),
                 \ 'action__line': unite#rtags#get_fileline(v:val),
                 \ 'action__col': unite#rtags#get_filecol(v:val),
+                \ 'action__text': unite#rtags#get_filetext(v:val)
                 \ }")
 endfunction

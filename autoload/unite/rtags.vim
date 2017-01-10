@@ -10,6 +10,10 @@ function! unite#rtags#get_filecol(result)
     return split(a:result, ':')[2]
 endfunction
 
+function! unite#rtags#get_filetext(result)
+    return substitute( split(a:result, ':')[3], '^\t', '', '')
+endfunction
+
 function! unite#rtags#get_word(result)
     let cwd = getcwd()
     let relpath = split(a:result, cwd.'/')[0]
