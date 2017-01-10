@@ -11,7 +11,7 @@ function! unite#rtags#get_filecol(result)
 endfunction
 
 function! unite#rtags#get_filetext(result)
-    return substitute( split(a:result, ':')[3], '^\t', '', '')
+    return substitute( a:result, '^[^:]\+:[^:]\+:[^:]\+:\t', '', '')
 endfunction
 
 function! unite#rtags#get_word(result)
