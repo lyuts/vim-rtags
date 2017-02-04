@@ -36,6 +36,24 @@ g:rtagsRcCmd
     location if it is installed to a non standard location or the location
     doesn't appear in the PATH.
 
+                                                        *g:rtagsRdmCmd*
+                                                        *rtags-variable-rdm-cmd*
+g:rtagsRdmCmd
+
+    Default: "rdm".
+    Points to an executable of 'rdm' command provided by rtags distribution.
+    Default value expects the directory containing 'rdm' to be in the PATH
+    environment variable. Overriding |g:rtagsRdmCmd| allows you specify 'rdm'
+    location if it is installed to a non standard location or the location
+    doesn't appear in the PATH.
+
+                                                 *g:rtagsAutoLaunchRdm*
+                                                 *rtags-variable-auto-launch-rdm*
+g:rtagsAutoLaunchRdm
+
+    Default: 0.
+    If set to 1, rdm will be launched at startup if it is not running.
+
                                             *g:rtagsExcludeSysHeaders*
                                             *rtags-variable-exclude-sys-headers*
 g:rtagsExcludeSysHeaders
