@@ -22,6 +22,8 @@ function! s:source_rtags_references.hooks.on_syntax(args, context)
     execute 'syntax match uniteSource__RtagsReferences_Symbol /'
                 \ . a:context.source__cword
                 \ . '/ contained containedin=uniteSource__RtagsReferences'
+    syntax match uniteSource__RtagsReferences_Separator /:/ contained
+          \ containedin=uniteSource__RtagsReferences_File,uniteSource__RtagsReferences_LineNR
     highlight default link uniteSource__RtagsReferences_File Comment
     highlight default link uniteSource__RtagsReferences_LineNr LineNR
     highlight default link uniteSource__RtagsReferences_Symbol Function
