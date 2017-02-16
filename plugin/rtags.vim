@@ -335,7 +335,7 @@ function! s:OpenReference() " <<<
 
     " Detect openable region
     let nr = matchlist(l, '#\([0-9]\+\)$')[1]
-    if nr
+    if !empty(nr)
         let f = b:rtagsLocations[nr].filename
         let lnum = b:rtagsLocations[nr].lnum
         let col = b:rtagsLocations[nr].col
