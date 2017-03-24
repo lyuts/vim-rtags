@@ -288,6 +288,7 @@ function! rtags#ViewReferences(results)
     setlocal buftype=nowrite
     setlocal bufhidden=delete
     setlocal nowrap
+    setlocal tw=0
 
     iabc <buffer>
 
@@ -336,22 +337,17 @@ function! s:OpenReference() " <<<
     " Detect openable region
     let nr = matchlist(l, '#\([0-9]\+\)$')[1]
     if !empty(nr)
-        let f = b:rtagsLocations[nr].filename
+        let jump_file = b:rtagsLocations[nr].filename
         let lnum = b:rtagsLocations[nr].lnum
         let col = b:rtagsLocations[nr].col
-        let oldwin = winnr()
-        wincmd p
-        if oldwin == winnr() || &modified
-            wincmd p
-            exec ("new " . f)
-        else
-            exec ("edit " . f)
+        wincmd j
+        " Add location to the jumplist
+        normal m'
+        if rtags#jumpToLocation(jump_file, lnum, col)
+            normal zz
         endif
-        silent execute "normal! ".lnum."G".col."|"
-        wincmd p
     endif
 endfunction " >>>
-
 
 "
 " Adds the list of references below the targeted item in the reference
