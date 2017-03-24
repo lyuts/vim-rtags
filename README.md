@@ -67,6 +67,7 @@ It is possible to set its maximum size (number of entries), default is 100:
 | &lt;Leader&gt;rp | -U --symbol-info-include-parents | Jump to parent                             |
 | &lt;Leader&gt;rc | --class-hierarchy                | Find subclasses                            |
 | &lt;Leader&gt;rC | --class-hierarchy                | Find superclasses                          |
+| &lt;Leader&gt;rh | --class-hierarchy                | List full class hierarchy                  |
 | &lt;Leader&gt;rf | -e -r                            | Find references                            |
 | &lt;Leader&gt;rF | -r --containing-function-location| Call tree (o - open node, Enter - jump)    |
 | &lt;Leader&gt;rn | -ae -R                           | Find references by name                    |
