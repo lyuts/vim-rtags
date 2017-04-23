@@ -332,9 +332,7 @@ function! rtags#getCurrentLocation()
 endfunction
 
 function! rtags#SymbolInfoHandler(output)
-    for line in a:output
-        echo line
-    endfor
+    echo join(a:output, "\n")
 endfunction
 
 function! rtags#SymbolInfo()
