@@ -452,26 +452,23 @@ endfunction
 
 function! rtags#JumpToParentHandler(results)
     let results = a:results
-    let parentSeparator = "===================="
-    let parentSeparatorPassed = 0
     for line in results
-        if line == parentSeparator
-            let parentSeparatorPassed = 1
+        let matched = matchend(line, "^Parent: ")
+        if matched == -1
+            continue
         endif
-        if parentSeparatorPassed == 1
-            let [jump_file, lnum, col] = rtags#parseSourceLocation(line)
-            if !empty(jump_file)
-                if a:0 > 0
-                    call rtags#cloneCurrentBuffer(a:1)
-                endif
-
-                " Add location to the jumplist
-                normal m'
-                if rtags#jumpToLocation(jump_file, lnum, col)
-                    normal zz
-                endif
-                return
+        let [jump_file, lnum, col] = rtags#parseSourceLocation(line[matched:-1])
+        if !empty(jump_file)
+            if a:0 > 0
+                call rtags#cloneCurrentBuffer(a:1)
             endif
+
+            " Add location to the jumplist
+            normal m'
+            if rtags#jumpToLocation(jump_file, lnum, col)
+                normal zz
+            endif
+            return
         endif
     endfor
 endfunction
