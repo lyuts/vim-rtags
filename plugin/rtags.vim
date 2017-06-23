@@ -1,11 +1,9 @@
-if has('nvim')
+if has('nvim') || (has('job') && has('channel'))
     let s:rtagsAsync = 1
     let s:job_cid = 0
     let s:jobs = {}
+    let s:result_stdout = {}
     let s:result_handlers = {}
-elseif has('job') && has('channel')
-    let s:rtagsAsync = 1
-
 endif
 
 if !exists("g:rtagsRcCmd")
@@ -184,6 +182,7 @@ endfunction
 "
 " Superclasses:
 "   class Foo src/Foo.h:56:7: class Foo : public Bar {
+    if s:rtagsAsync == 1
 "     class Bar	src/Bar.h:46:7:	class Bar : public Bas {
 "       class Bas src/Bas.h:47:7: class Bas {
 " Subclasses:
@@ -570,20 +569,49 @@ function! rtags#ExecuteRCAsync(args, handlers)
 
     let s:job_cid = s:job_cid + 1
     " should have out+err redirection portable for various shells.
-    let cmd = cmd . '>& ' . rtags#TempFile(s:job_cid)
-    let job = jobstart(cmd, s:callbacks)
-    let s:jobs[job] = s:job_cid
-    let s:result_handlers[job] = a:handlers
+    if has('nvim')
+        let cmd = cmd . '>& ' . rtags#TempFile(s:job_cid)
+        let job = jobstart(cmd, s:callbacks)
+        let s:jobs[job] = s:job_cid
+        let s:result_handlers[job] = a:handlers
+    elseif has('job') && has('channel')
+        let l:opts = {}
+        let l:opts.mode = 'nl'
+        let l:opts.in_io = 'buffer'
+        let l:opts.in_buf = bufnr('%')
+        let l:opts.out_cb = {ch, data -> rtags#HandleResults(ch_info(ch).id, data, 'vim_stdout')}
+        let l:opts.exit_cb = {ch, data -> rtags#HandleResults(ch_info(ch).id, data,'vim_exit')}
+        let l:opts.stoponexit = 'kill'
+        let job = job_start(cmd, l:opts)
+        let channel = ch_info(job_getchannel(job)).id
+        let s:result_stdout[channel] = []
+        let s:jobs[channel] = s:job_cid
+        let s:result_handlers[channel] = a:handlers
+    endif
 
 endfunction
 
 function! rtags#HandleResults(job_id, data, event)
-    let job_cid = remove(s:jobs, a:job_id)
-    let temp_file = rtags#TempFile(job_cid)
-    let output = readfile(temp_file)
-    let handlers = remove(s:result_handlers, a:job_id)
-    call rtags#ExecuteHandlers(output, handlers)
-    execute 'silent !rm -f ' . temp_file
+
+
+    if a:event == 'vim_stdout'
+        call add(s:result_stdout[a:job_id], a:data)
+    elseif a:event == 'vim_exit'
+
+        let job_cid = remove(s:jobs, a:job_id)
+        let handlers = remove(s:result_handlers, a:job_id)
+        let output = remove(s:result_stdout, a:job_id)
+
+        call rtags#ExecuteHandlers(output, handlers)
+    else
+        let job_cid = remove(s:jobs, a:job_id)
+        let temp_file = rtags#TempFile(job_cid)
+        let output = readfile(temp_file)
+        let handlers = remove(s:result_handlers, a:job_id)
+        call rtags#ExecuteHandlers(output, handlers)
+        execute 'silent !rm -f ' . temp_file
+    endif
+
 endfunction
 
 function! rtags#ExecuteHandlers(output, handlers)
@@ -605,7 +633,7 @@ function! rtags#ExecuteHandlers(output, handlers)
 endfunction
 
 function! rtags#ExecuteThen(args, handlers)
-    if has('nvim')
+    if s:rtagsAsync == 1
         call rtags#ExecuteRCAsync(a:args, a:handlers)
     else
         let result = rtags#ExecuteRC(a:args)
