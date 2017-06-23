@@ -920,7 +920,6 @@ function! RtagsCompleteFunc(findstart, base)
     if s:rtagsAsync == 1 && !has('nvim')
         return s:RtagsCompleteFunc(a:findstart, a:base, 1)
     else
-        echomsg "no async"
         return s:RtagsCompleteFunc(a:findstart, a:base, 0)
     endif
 endfunction
