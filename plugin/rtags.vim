@@ -942,6 +942,19 @@ function! s:RcJobExecute(offset, line, col)
 
 endf
 
+"""
+" Temporarily the way this function works is:
+"     - completeion invoked on
+"         object.meth*
+"       , where * is cursor position
+"     - find the position of a dot/arrow
+"     - invoke completion through rc
+"     - filter out options that start with meth (in this case).
+"     - show completion options
+" 
+"     Reason: rtags returns all options regardless of already type method name
+"     portion
+"""
 function! RtagsCompleteFunc(findstart, base)
     if s:rtagsAsync == 1 && !has('nvim')
         return s:RtagsCompleteFunc(a:findstart, a:base, 1)
