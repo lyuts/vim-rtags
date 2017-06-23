@@ -3,6 +3,9 @@ if has('nvim')
     let s:job_cid = 0
     let s:jobs = {}
     let s:result_handlers = {}
+elseif has('job') && has('channel')
+    let s:rtagsAsync = 1
+
 endif
 
 if !exists("g:rtagsRcCmd")
@@ -776,7 +779,6 @@ function! rtags#CompleteAtCursor(wordStart, base)
     " sed command to remove CDATA prefix and closing xml tag from rtags output
     let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
     let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-    echomsg cmd
     call rtags#Log("Command line:".cmd)
 
     let result = split(system(cmd, stdin_lines), '\n\+')
@@ -792,28 +794,76 @@ function! rtags#CompleteAtCursor(wordStart, base)
     "    call rtags#DisplayResults(result)
 endfunction
     
-function! s:RcExecuteDoneTriggerCompletion()
-  let b:rtags_state['state'] = 'finish'
-  if ! empty(b:rtags_state['stdout']) && mode() == 'i'
-    call feedkeys("\<C-x>\<C-o>", "t")
-  else
-    call RtagsCompleteFunc(0, RtagsCompleteFunc(1, 0))
-  endif
+function! s:RcExecuteJobCompletion()
+    call rtags#SetJobStateFinish()
+    if ! empty(b:rtags_state['stdout']) && mode() == 'i'
+        call feedkeys("\<C-x>\<C-o>", "t")
+    else
+        call RtagsCompleteFunc(0, RtagsCompleteFunc(1, 0))
+    endif
 endfunction
 
 "{{{ RcExecuteJobHandler
 "Handles stdout/stderr/exit events, and stores the stdout/stderr received from the shells.
 function! RcExecuteJobHandler(job_id, data, event)
-    if a:event == 'stdout'
-        call add(b:rtags_state['stdout'], a:data)
-    elseif a:event == 'stderr'
-        call add(b:rtags_state['stderr'], a:data)
-    elseif a:event == 'exit'
-        " echo b:rtags_state['stdout']
-        let list_length   = len(b:rtags_state['stdout'])
-        call s:RcExecuteDoneTriggerCompletion()
+    if a:event == 'exit'
+        call s:RcExecuteJobCompletion()
+    else
+        call rtags#AddJobStandard(a:event, a:data)
     endif
 endf
+
+function! rtags#SetJobStateFinish()
+    let b:rtags_state['state'] = 'finish'
+endfunction
+
+function! rtags#AddJobStandard(eventType, data)
+    call add(b:rtags_state[a:eventType], a:data)
+endfunction
+
+function! rtags#SetJobStateReady()
+    let b:rtags_state['state'] = 'ready'
+endfunction
+
+function! rtags#IsJobStateReady()
+    if b:rtags_state['state'] == 'ready'
+        return 1
+    endif
+    return 0
+endfunction
+
+function! rtags#IsJobStateBusy()
+    if b:rtags_state['state'] == 'busy'
+        return 1
+    endif
+    return 0
+endfunction
+
+function! rtags#IsJobStateFinish()
+    if b:rtags_state['state'] == 'finish'
+        return 1
+    endif
+    return 0
+endfunction
+
+"{{{ s:RcExecute
+endfunction
+
+function! rtags#SetStartJobState()
+    let b:rtags_state['state'] = 'busy'
+    let b:rtags_state['stdout'] = []
+    let b:rtags_state['stderr'] = []
+endfunction
+
+function! rtags#GetJobStdOutput()
+    return b:rtags_state['stdout']
+endfunction
+
+function! rtags#ExistsAndCreateRtagsState()
+    if !exists('b:rtags_state')
+        let b:rtags_state = { 'state': 'ready', 'stdout': [], 'stderr': [] }
+    endif
+endfunction
 
 "{{{ s:RcExecute
 " Execute clang binary to generate completions and diagnostics.
@@ -835,7 +885,6 @@ function! s:RcJobExecute(offset, line, col)
 
     let file = expand("%:p")
     let l:cmd = printf("rc --absolute-path --synchronous-completions -l %s:%s:%s --unsaved-file=%s:%s", file, a:line, a:col, file, a:offset)
-    " let l:cmd = printf("rc --absolute-path --synchronous-completions -l %s:%s:%s --unsaved-file=%s:%s", file, a:line, a:col, file, a:offset)
 
     if exists('b:rc_execute_job_id') && job_status(b:rc_execute_job_id) == 'run'
       try
@@ -845,6 +894,8 @@ function! s:RcJobExecute(offset, line, col)
         " Ignore
       endtry
     endif
+
+    call rtags#SetStartJobState()
 
     let l:argv = l:cmd
     let l:opts = {}
@@ -857,68 +908,82 @@ function! s:RcJobExecute(offset, line, col)
     let l:opts.stoponexit = 'kill'
 
     let l:jobid = job_start(l:argv, l:opts)
-    " let b:rtags_state['stdout'] = []
-    " let b:rtags_state['stderr'] = []
     let b:rc_execute_job_id = l:jobid
 
-    " if job_status(l:jobid) != 'run'
-    "     unlet b:rc_execute_job_id
-    " endif
+    if job_status(l:jobid) != 'run'
+        unlet b:rc_execute_job_id
+    endif
 
 endf
 
 function! RtagsCompleteFunc(findstart, base)
-    let l:result = s:RtagsCompleteFunc(a:findstart, a:base)
-    return l:result
+    if s:rtagsAsync == 1 && !has('nvim')
+        return s:RtagsCompleteFunc(a:findstart, a:base, 1)
+    else
+        echomsg "no async"
+        return s:RtagsCompleteFunc(a:findstart, a:base, 0)
+    endif
 endfunction
 
+function! s:RtagsCompleteFunc(findstart, base, async)
+    call rtags#Log("RtagsCompleteFunc: [".a:findstart."], [".a:base."]")
 
-let s:rtag_completeopts = []
-
-function! s:RtagsCompleteFunc(findstart, base)
-
-    " call rtags#Log("RtagsCompleteFunc: [".a:findstart."], [".a:base."]")
     if a:findstart
-        if !exists('b:rtags_state')
-          let b:rtags_state = { 'state': 'ready', 'stdout': [], 'stderr': [] }
-        endif
-        " call rtags#Log("findStart")
-        if b:rtags_state['state'] == 'busy'
-            return -3
-        endif
-
-        " got from RipRip/clang_complete
         let l:start = col('.') - 1
-        let pos = getpos('.')
-        let l:line = pos[1] 
-        let l:col = pos[2]
-        let l:stdin_lines = join(getline(1, "$"), "\n").a:base
-        let l:offset = len(l:stdin_lines)
+        if a:async == 0
+            " got from RipRip/clang_complete
+            let l:line = getline('.')
+            let l:wsstart = l:start
+            if l:line[l:wsstart - 1] =~ '\s'
+                while l:wsstart > 0 && l:line[l:wsstart - 1] =~ '\s'
+                    let l:wsstart -= 1
+                endwhile
+            endif
+            while l:start > 0 && l:line[l:start - 1] =~ '\i'
+                let l:start -= 1
+            endwhile
+            let b:col = l:start + 1
+            call rtags#Log("column:".b:col)
+            call rtags#Log("start:".l:start)
+        else
+            "buffer local variable
+            call rtags#ExistsAndCreateRtagsState()
 
-        if index(['.', '::', '->'], a:base) != -1
-            let l:col += 1
-        endif
+            if rtags#IsJobStateBusy() == 1
+                return -3
+            elseif rtags#IsJobStateReady() == 1
+                let b:firstBase = a:base
 
-        if b:rtags_state['state'] == 'ready'
-            let b:rtags_state['state'] = 'busy'
-            let b:rtags_state['stdout'] = []
-            let b:firstBase = a:base
-            call s:RcJobExecute(l:offset, l:line, l:col)
-        elseif b:rtags_state['state'] == 'finish'
-            let b:rtags_state['state'] = 'ready'
-        endif
+                let pos = getpos('.')
+                let l:line = pos[1] 
+                let l:col = pos[2]
 
-        if b:rtags_state['state'] == 'busy'
-          return -3
+                if index(['.', '::', '->'], a:base) != -1
+                    let l:col += 1
+                endif
+                let l:stdin_lines = join(getline(1, "$"), "\n").a:base
+                let l:offset = len(l:stdin_lines)
+
+                call s:RcJobExecute(l:offset, l:line, l:col)
+                return -3
+            elseif rtags#IsJobStateFinish() == 1
+                call rtags#SetJobStateReady()
+            endif
         endif
-    
-        let l:start
+        return l:start
     else
-        let completeopts = b:rtags_state['stdout']
+
+        let wordstart = getpos('.')[0]
+        if a:async == 0
+            let l:completeopts = rtags#CompleteAtCursor(wordstart, a:base)
+        else
+            let l:completeopts = rtags#GetJobStdOutput()
+        endif
+
         let a = []
-        for line in completeopts
+        for line in l:completeopts
             let option = split(line)
-            if a:base != "" && stridx(option[0], b:firstBase) != 0
+            if a:base != "" && stridx(option[0], a:base) != 0
                 continue
             endif
             let match = {}
