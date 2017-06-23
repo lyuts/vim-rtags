@@ -577,8 +577,6 @@ function! rtags#ExecuteRCAsync(args, handlers)
     elseif has('job') && has('channel')
         let l:opts = {}
         let l:opts.mode = 'nl'
-        let l:opts.in_io = 'buffer'
-        let l:opts.in_buf = bufnr('%')
         let l:opts.out_cb = {ch, data -> rtags#HandleResults(ch_info(ch).id, data, 'vim_stdout')}
         let l:opts.exit_cb = {ch, data -> rtags#HandleResults(ch_info(ch).id, data,'vim_exit')}
         let l:opts.stoponexit = 'kill'
