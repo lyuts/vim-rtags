@@ -871,8 +871,6 @@ function! rtags#IsJobStateFinish()
     return 0
 endfunction
 
-"{{{ s:RcExecute
-endfunction
 
 function! rtags#SetStartJobState()
     let b:rtags_state['state'] = 'busy'
