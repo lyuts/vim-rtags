@@ -182,7 +182,6 @@ endfunction
 "
 " Superclasses:
 "   class Foo src/Foo.h:56:7: class Foo : public Bar {
-    if s:rtagsAsync == 1
 "     class Bar	src/Bar.h:46:7:	class Bar : public Bas {
 "       class Bas src/Bas.h:47:7: class Bas {
 " Subclasses:
