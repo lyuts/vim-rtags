@@ -65,6 +65,8 @@ It is possible to set its maximum size (number of entries), default is 100:
 | &lt;Leader&gt;rV | -f                               | Follow location (open in vertical split)   |
 | &lt;Leader&gt;rT | -f                               | Follow location open in a new tab          |
 | &lt;Leader&gt;rp | -U --symbol-info-include-parents | Jump to parent                             |
+| &lt;Leader&gt;rc | --class-hierarchy                | Find subclasses                            |
+| &lt;Leader&gt;rC | --class-hierarchy                | Find superclasses                          |
 | &lt;Leader&gt;rf | -e -r                            | Find references                            |
 | &lt;Leader&gt;rn | -ae -R                           | Find references by name                    |
 | &lt;Leader&gt;rs | -a -F                            | Find symbols by name                       |
