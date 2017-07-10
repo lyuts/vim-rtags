@@ -1,6 +1,5 @@
 if has('nvim')
     let s:rtagsAsync = 1
-    let s:job_cid = 0
     let s:jobs = {}
     let s:result_handlers = {}
 endif
@@ -45,7 +44,7 @@ endif
 
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
-    if v:shell_error != 0 
+    if v:shell_error != 0
         call system(g:rtagsRdmCmd." --daemon > /dev/null")
     end
 end
@@ -150,6 +149,9 @@ function! rtags#ParseResults(results)
     let locations = []
     let nr = 1
     for record in a:results
+        if len(split(record, '\s\+')) == 0
+            continue
+        endif
         let [location; rest] = split(record, '\s\+')
         let [file, lnum, col] = rtags#parseSourceLocation(location)
 
@@ -432,7 +434,7 @@ function! rtags#saveLocation()
 endfunction
 
 function! rtags#pushToStack(location)
-    let jumpListLen = len(g:rtagsJumpStack) 
+    let jumpListLen = len(g:rtagsJumpStack)
     if jumpListLen > g:rtagsJumpStackMaxSize
         call remove(g:rtagsJumpStack, 0)
     endif
@@ -530,10 +532,6 @@ function! rtags#RenameSymbolUnderCursor()
     call rtags#ExecuteThen(args, [function('rtags#RenameSymbolUnderCursorHandler')])
 endfunction
 
-function! rtags#TempFile(job_cid)
-    return '/tmp/neovim_async_rtags.tmp.' . getpid() . '.' . a:job_cid
-endfunction
-
 function! rtags#ExecuteRCAsync(args, handlers)
     let cmd = rtags#getRcCmd()
 
@@ -562,25 +560,35 @@ function! rtags#ExecuteRCAsync(args, handlers)
     endfor
 
     let s:callbacks = {
-                \ 'on_exit' : function('rtags#HandleResults')
+                \ 'on_exit' : function('rtags#HandleResults'),
+                \ 'on_stderr' : function('rtags#HandleResults'),
+                \ 'on_stdout' : function('rtags#HandleResults')
                 \ }
 
-    let s:job_cid = s:job_cid + 1
     " should have out+err redirection portable for various shells.
-    let cmd = cmd . '>& ' . rtags#TempFile(s:job_cid)
     let job = jobstart(cmd, s:callbacks)
-    let s:jobs[job] = s:job_cid
+    let s:jobs[job] = {
+        \ 'stdout' : [],
+        \ 'stderr' : []
+        \ }
     let s:result_handlers[job] = a:handlers
 
 endfunction
 
 function! rtags#HandleResults(job_id, data, event)
-    let job_cid = remove(s:jobs, a:job_id)
-    let temp_file = rtags#TempFile(job_cid)
-    let output = readfile(temp_file)
-    let handlers = remove(s:result_handlers, a:job_id)
-    call rtags#ExecuteHandlers(output, handlers)
-    execute 'silent !rm -f ' . temp_file
+    if a:event == 'stdout'
+        let s:jobs[a:job_id]['stdout']+=a:data
+    elseif a:event == 'stderr'
+        let s:jobs[a:job_id]['stderr']+=a:data
+    else
+        let output = remove(s:jobs, a:job_id)
+        if output['stdout'][0] =~ '^Not indexed'
+            echohl ErrorMsg | echomsg "[vim-rtags] Current file is not indexed!" | echohl None
+            return
+        endif
+        let handlers = remove(s:result_handlers, a:job_id)
+        call rtags#ExecuteHandlers(output['stdout'], handlers)
+    endif
 endfunction
 
 function! rtags#ExecuteHandlers(output, handlers)
@@ -598,7 +606,7 @@ function! rtags#ExecuteHandlers(output, handlers)
                 return
             endtry
         endif
-    endfor 
+    endfor
 endfunction
 
 function! rtags#ExecuteThen(args, handlers)
@@ -753,7 +761,7 @@ function! rtags#CompleteAtCursor(wordStart, base)
     let flags = "--synchronous-completions -l"
     let file = expand("%:p")
     let pos = getpos('.')
-    let line = pos[1] 
+    let line = pos[1]
     let col = pos[2]
 
     if index(['.', '::', '->'], a:base) != -1
@@ -801,7 +809,7 @@ endfunction
 "     - invoke completion through rc
 "     - filter out options that start with meth (in this case).
 "     - show completion options
-" 
+"
 "     Reason: rtags returns all options regardless of already type method name
 "     portion
 """
