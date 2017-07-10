@@ -383,9 +383,9 @@ function! rtags#JumpToHandler(results, args)
         let [jump_file, lnum, col; rest] = split(location, ':')
 
         " Add location to the jumplist
-        normal m'
+        normal! m'
         if rtags#jumpToLocation(jump_file, lnum, col)
-            normal zz
+            normal! zz
         endif
     endif
 
@@ -462,9 +462,9 @@ function! rtags#JumpToParentHandler(results)
             endif
 
             " Add location to the jumplist
-            normal m'
+            normal! m'
             if rtags#jumpToLocation(jump_file, lnum, col)
-                normal zz
+                normal! zz
             endif
             return
         endif
@@ -493,8 +493,8 @@ function! rtags#RenameSymbolUnderCursorHandler(output)
                 if !rtags#jumpToLocationInternal(loc.filepath, loc.lnum, loc.col)
                     return
                 endif
-                normal zv
-                normal zz
+                normal! zv
+                normal! zz
                 redraw
                 let choice = yesToAll
                 if choice == 0
@@ -509,9 +509,9 @@ function! rtags#RenameSymbolUnderCursorHandler(output)
                 if choice == 1
                     " Special case for destructors
                     if s:GetCharacterUnderCursor() == '~'
-                        normal l
+                        normal! l
                     endif
-                    exec "normal ciw".newName."\<Esc>"
+                    exec "normal! ciw".newName."\<Esc>"
                     write!
                 elseif choice == 4
                     return
@@ -762,7 +762,7 @@ function! rtags#CompleteAtCursor(wordStart, base)
 
     let rcRealCmd = rtags#getRcCmd()
 
-    exec "normal \<Esc>"
+    exec "normal! \<Esc>"
     let stdin_lines = join(getline(1, "$"), "\n").a:base
     let offset = len(stdin_lines)
 
