@@ -4,6 +4,8 @@ if has('nvim') || (has('job') && has('channel'))
     let s:jobs = {}
     let s:result_stdout = {}
     let s:result_handlers = {}
+else
+    let s:rtagsAsync = 0
 endif
 
 if !exists("g:rtagsRcCmd")
