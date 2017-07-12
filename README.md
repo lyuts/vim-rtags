@@ -75,6 +75,7 @@ It is possible to set its maximum size (number of entries), default is 100:
 | &lt;Leader&gt;rw | -e -r --rename                   | Rename symbol under cursor                 |
 | &lt;Leader&gt;rv | -k -r                            | Find virtuals                              |
 | &lt;Leader&gt;rb | N/A                              | Jump to previous location                  |
+| &lt;Leader&gt;rd | --diagnose                       | Show diagnostics                           |
 
 ## Unite sources
 
