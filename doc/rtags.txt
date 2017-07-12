@@ -186,6 +186,10 @@ g:rtagsLog
                                                             *rtags-FindSubClasses*
     <Leader>rc      Find the subclasses of the class under the cursor.
 
+                                                            *rtags-leader-ro*
+                                                            *rtags-JumpToMethod*
+    <Leader>ro      Find and jump to method in current file.
+
                                                                 *rtags-commands*
 5. Commands
 
