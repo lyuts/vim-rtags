@@ -83,6 +83,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rb :call rtags#JumpBack()<CR>
     noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
     noremap <Leader>rc :call rtags#FindSubClasses()<CR>
+    noremap <Leader>ro :call rtags#JumpToMethod(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rd :call rtags#Diagnostics()<CR>
 endif
 
@@ -414,6 +415,16 @@ function! rtags#JumpTo(open_opt, ...)
     call extend(args, { '-f' : rtags#getCurrentLocation() })
     let results = rtags#ExecuteThen(args, [[function('rtags#JumpToHandler'), { 'open_opt' : a:open_opt }]])
 
+endfunction
+
+function! rtags#JumpToMethod(pattern)
+    let current_file = expand("%")
+    let args = {
+                \ '-a' : '',
+                \ '-F': a:pattern,
+                \ '--kind-filter': 'CXXMethod',
+                \ '-i': current_file }
+    let results = rtags#ExecuteThen(args, [[function('rtags#JumpToHandler'), { 'open_opt' : g:SAME_WINDOW }]])
 endfunction
 
 function! rtags#parseSourceLocation(string)
