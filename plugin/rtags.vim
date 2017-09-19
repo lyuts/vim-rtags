@@ -66,7 +66,7 @@ let s:LOC_OPEN_OPTS = {
             \ }
 
 if !exists("g:rtagsLeader")
-	let g:rtagsLeader = '\'
+	let g:rtagsLeader = '<leader>r'
 endif
 exec 'map ' . g:rtagsLeader . ' <Plug>(rtags-prefix)'
 
