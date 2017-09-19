@@ -65,25 +65,30 @@ let s:LOC_OPEN_OPTS = {
             \ g:NEW_TAB : 'tab'
             \ }
 
+if !exists("g:rtagsLeader")
+	let g:rtagsLeader = '\'
+endif
+exec 'map ' . g:rtagsLeader . ' <Plug>(rtags-prefix)'
+
 if g:rtagsUseDefaultMappings == 1
-    noremap <Leader>ri :call rtags#SymbolInfo()<CR>
-    noremap <Leader>rj :call rtags#JumpTo(g:SAME_WINDOW)<CR>
-    noremap <Leader>rJ :call rtags#JumpTo(g:SAME_WINDOW, { '--declaration-only' : '' })<CR>
-    noremap <Leader>rS :call rtags#JumpTo(g:H_SPLIT)<CR>
-    noremap <Leader>rV :call rtags#JumpTo(g:V_SPLIT)<CR>
-    noremap <Leader>rT :call rtags#JumpTo(g:NEW_TAB)<CR>
-    noremap <Leader>rp :call rtags#JumpToParent()<CR>
-    noremap <Leader>rf :call rtags#FindRefs()<CR>
-    noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
-    noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
-    noremap <Leader>rr :call rtags#ReindexFile()<CR>
-    noremap <Leader>rl :call rtags#ProjectList()<CR>
-    noremap <Leader>rw :call rtags#RenameSymbolUnderCursor()<CR>
-    noremap <Leader>rv :call rtags#FindVirtuals()<CR>
-    noremap <Leader>rb :call rtags#JumpBack()<CR>
-    noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
-    noremap <Leader>rc :call rtags#FindSubClasses()<CR>
-    noremap <Leader>rd :call rtags#Diagnostics()<CR>
+    noremap <Plug>(rtags-prefix)i :call rtags#SymbolInfo()<CR>
+    noremap <Plug>(rtags-prefix)j :call rtags#JumpTo(g:SAME_WINDOW)<CR>
+    noremap <Plug>(rtags-prefix)J :call rtags#JumpTo(g:SAME_WINDOW, { '--declaration-only' : '' })<CR>
+    noremap <Plug>(rtags-prefix)S :call rtags#JumpTo(g:H_SPLIT)<CR>
+    noremap <Plug>(rtags-prefix)V :call rtags#JumpTo(g:V_SPLIT)<CR>
+    noremap <Plug>(rtags-prefix)T :call rtags#JumpTo(g:NEW_TAB)<CR>
+    noremap <Plug>(rtags-prefix)p :call rtags#JumpToParent()<CR>
+    noremap <Plug>(rtags-prefix)f :call rtags#FindRefs()<CR>
+    noremap <Plug>(rtags-prefix)n :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
+    noremap <Plug>(rtags-prefix)s :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
+    noremap <Plug>(rtags-prefix)r :call rtags#ReindexFile()<CR>
+    noremap <Plug>(rtags-prefix)l :call rtags#ProjectList()<CR>
+    noremap <Plug>(rtags-prefix)w :call rtags#RenameSymbolUnderCursor()<CR>
+    noremap <Plug>(rtags-prefix)v :call rtags#FindVirtuals()<CR>
+    noremap <Plug>(rtags-prefix)b :call rtags#JumpBack()<CR>
+    noremap <Plug>(rtags-prefix)C :call rtags#FindSuperClasses()<CR>
+    noremap <Plug>(rtags-prefix)c :call rtags#FindSubClasses()<CR>
+    noremap <Plug>(rtags-prefix)d :call rtags#Diagnostics()<CR>
 endif
 
 """
