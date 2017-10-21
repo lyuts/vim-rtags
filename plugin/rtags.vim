@@ -304,7 +304,7 @@ endfunction
 
 function! rtags#getCurrentLocation()
     let [lnum, col] = getpos('.')[1:2]
-    return printf("%s:%s:%s", expand("%"), lnum, col)
+    return printf("%s:%s:%s", expand("%:p"), lnum, col)
 endfunction
 
 function! rtags#SymbolInfoHandler(output)
