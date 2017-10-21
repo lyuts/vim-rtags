@@ -86,6 +86,22 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rd :call rtags#Diagnostics()<CR>
 endif
 
+let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
+
+function! rtags#InitPython()
+python3 << endpython
+import vim
+
+script_folder = vim.eval('s:script_folder_path')
+sys.path.insert(0, script_folder)
+
+import vimrtags
+
+endpython
+endfunction
+
+call rtags#InitPython()
+
 """
 " Logging routine
 """
@@ -275,49 +291,6 @@ endfunction
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
     call rtags#DisplayLocations(locations)
-endfunction
-
-"
-" param[in] results - Data get by rc diagnose command (XML format)
-"
-function! rtags#DisplayDiagnosticsResults(results)
-    exe 'sign unplace *'
-    exe 'sign define fixit text=F texthl=FixIt'
-    exe 'sign define warning text=W texthl=Warning'
-    exe 'sign define error text=E texthl=Error'
-
-python3 << endpython
-import json
-import xml.etree.ElementTree as ET
-
-tree = ET.fromstring('\n'.join(vim.eval("a:results")))
-file = tree.find('file')
-errors = file.findall('error')
-name = file.get('name')
-
-quickfix_errors = []
-for i, e in enumerate(errors):
-    severity = e.get('severity')
-    if severity == 'skipped':
-        continue
-    line = e.get('line')
-    column = e.get('column')
-    message = e.get('message')
-
-    # strip error prefix
-    s = ' Issue: '
-    index = message.find(s)
-    if index != -1:
-      message = message[index + len(s):]
-
-    error_type = 'E' if severity == 'error' else 'W'
-
-    quickfix_errors.append({'lnum': line, 'col': column, 'nr': i, 'text': message, 'filename': name, 'type': error_type})
-    cmd = 'sign place %d line=%s name=%s file=%s' % (i + 1, line, severity, name)
-    vim.command(cmd)
-
-vim.eval('rtags#DisplayLocations(%s)' % json.dumps(quickfix_errors))
-endpython
 endfunction
 
 function! rtags#getRcCmd()
@@ -769,11 +742,8 @@ function! rtags#FindSymbolsOfWordUnderCursor()
 endfunction
 
 function! rtags#Diagnostics()
-    let args = {
-                \ '--diagnose' : expand("%:p"),
-                \ '--synchronous-diagnostics' : '' }
-
-    call rtags#ExecuteThen(args, [function('rtags#DisplayDiagnosticsResults')])
+    let s:file = expand("%:p")
+    return s:Pyeval("vimrtags.get_diagnostics()")
 endfunction
 
 "
@@ -819,6 +789,10 @@ function! rtags#CompleteAtCursor(wordStart, base)
     "        echo r
     "    endfor
     "    call rtags#DisplayResults(result)
+endfunction
+
+function! s:Pyeval( eval_string )
+  return py3eval( a:eval_string )
 endfunction
     
 function! s:RcExecuteJobCompletion()
@@ -954,6 +928,7 @@ endf
 "     Reason: rtags returns all options regardless of already type method name
 "     portion
 """
+
 function! RtagsCompleteFunc(findstart, base)
     if s:rtagsAsync == 1 && !has('nvim')
         return s:RtagsCompleteFunc(a:findstart, a:base, 1)
@@ -966,74 +941,16 @@ function! s:RtagsCompleteFunc(findstart, base, async)
     call rtags#Log("RtagsCompleteFunc: [".a:findstart."], [".a:base."]")
 
     if a:findstart
-        let l:start = col('.') - 1
-        if a:async == 0
-            " got from RipRip/clang_complete
-            let l:line = getline('.')
-            let l:wsstart = l:start
-            if l:line[l:wsstart - 1] =~ '\s'
-                while l:wsstart > 0 && l:line[l:wsstart - 1] =~ '\s'
-                    let l:wsstart -= 1
-                endwhile
-            endif
-            while l:start > 0 && l:line[l:start - 1] =~ '\i'
-                let l:start -= 1
-            endwhile
-            let b:col = l:start + 1
-            call rtags#Log("column:".b:col)
-            call rtags#Log("start:".l:start)
-        else
-            "buffer local variable
-            call rtags#ExistsAndCreateRtagsState()
-
-            if rtags#IsJobStateBusy() == 1
-                return -3
-            elseif rtags#IsJobStateReady() == 1
-                let b:firstBase = a:base
-
-                let pos = getpos('.')
-                let l:line = pos[1] 
-                let l:col = pos[2]
-
-                if index(['.', '::', '->'], a:base) != -1
-                    let l:col += 1
-                endif
-                let l:stdin_lines = join(getline(1, "$"), "\n").a:base
-                let l:offset = len(l:stdin_lines)
-
-                call s:RcJobExecute(l:offset, l:line, l:col)
-                return -3
-            elseif rtags#IsJobStateFinish() == 1
-                call rtags#SetJobStateReady()
-            endif
-        endif
-        return l:start
+        let s:line = getline('.')
+        let s:start = col('.') - 2
+        return s:Pyeval("vimrtags.get_identifier_beginning()")
     else
-
-        let wordstart = getpos('.')[0]
-        if a:async == 0
-            let l:completeopts = rtags#CompleteAtCursor(wordstart, a:base)
-        else
-            let l:completeopts = rtags#GetJobStdOutput()
-        endif
-
-        let a = []
-        for line in l:completeopts
-            let option = split(line)
-            if a:base != "" && stridx(option[0], a:base) != 0
-                continue
-            endif
-            let match = {}
-            let match.word = option[0]
-            let match.kind = option[len(option) - 1]
-            if match.kind == "CXXMethod"
-                let match.word = match.word.'('
-            endif
-            let match.menu = join(option[1:len(option) - 1], ' ')
-            call add(a, match)
-            "call rtags#Log(match)
-        endfor
-        return a
+        let pos = getpos('.')
+        let s:file = expand("%:p")
+        let s:line = str2nr(pos[1])
+        let s:col = str2nr(pos[2]) + len(a:base)
+        let s:prefix = a:base
+        return s:Pyeval("vimrtags.send_completion_request()")
     endif
 endfunction
 
