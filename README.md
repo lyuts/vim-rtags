@@ -81,7 +81,7 @@ It is possible to set its maximum size (number of entries), default is 100:
 This plugin defines three Unite sources:
 * `rtags/references` - list references (i.e., &lt;Leader&gt;rf).
 * `rtags/symbol` - find symbol (i.e., &lt;Leader&gt;rs). Use `rtags/symbol:i`
-  for case insensitibe search.
+  for case insensitive search.
 * `rtags/project` - list/switch projects.
 
 ## Code completion
@@ -95,7 +95,7 @@ Also ```RtagsCompleteFunc``` can be used as omnifunc. For example, you can use
 such approach with [neocomplete](https://github.com/Shougo/neocomplete.vim)(for more details read it's docs):
 
 ```
-function! SetupNeocomleteForCppWithRtags()
+function! SetupNeocompleteForCppWithRtags()
     " Enable heavy omni completion.
     setlocal omnifunc=RtagsCompleteFunc
 
@@ -107,14 +107,14 @@ function! SetupNeocomleteForCppWithRtags()
     set completeopt+=longest,menuone
 endfunction
 
-autocmd FileType cpp,c call SetupNeocomleteForCppWithRtags()
+autocmd FileType cpp,c call SetupNeocompleteForCppWithRtags()
 
 ```
 Such config provides automatic calls, of omnicompletion on c and cpp entity accessors.
 
 ### Current limitations
-* There are no support for ovveriden functions and methods
-* Thre are no support for function's arguments completion
+* There is no support for overridden functions and methods
+* Thre is no support for function argument completion
 
 # Notes
 1. This plugin is wip.
