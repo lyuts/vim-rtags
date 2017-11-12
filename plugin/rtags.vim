@@ -89,7 +89,7 @@ endif
 let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
 
 function! rtags#InitPython()
-python3 << endpython
+python << endpython
 import vim
 
 script_folder = vim.eval('s:script_folder_path')
@@ -792,7 +792,7 @@ function! rtags#CompleteAtCursor(wordStart, base)
 endfunction
 
 function! s:Pyeval( eval_string )
-  return py3eval( a:eval_string )
+  return pyeval( a:eval_string )
 endfunction
     
 function! s:RcExecuteJobCompletion()
