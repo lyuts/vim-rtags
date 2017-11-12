@@ -144,6 +144,12 @@ g:rtagsLog
                                                                *rtags-FindRefs*
     <Leader>rf      Find references of the symbol under the cursor.
 
+                                                        *rtags-leader-rF*
+                                                        *rtags-FindRefsCallTree*
+    <Leader>rF      Find references of the symbol under the cursor in a tree
+                    view. In this view, press 'o' to expand any reference to
+                    find callers to the function containing that reference.
+
                                                           *rtags-leader-rn*
                                                           *rtags-FindRefsByName*
     <Leader>rn      Find symbol(s) references that match the provided pattern.
