@@ -74,6 +74,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rT :call rtags#JumpTo(g:NEW_TAB)<CR>
     noremap <Leader>rp :call rtags#JumpToParent()<CR>
     noremap <Leader>rf :call rtags#FindRefs()<CR>
+    noremap <Leader>rF :call rtags#FindRefsCallTree()<CR>
     noremap <Leader>rn :call rtags#FindRefsByName(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rs :call rtags#FindSymbols(input("Pattern? ", "", "customlist,rtags#CompleteSymbols"))<CR>
     noremap <Leader>rr :call rtags#ReindexFile()<CR>
@@ -291,6 +292,165 @@ endfunction
 function! rtags#DisplayResults(results)
     let locations = rtags#ParseResults(a:results)
     call rtags#DisplayLocations(locations)
+endfunction
+
+"
+" Creates a tree viewer for references to a symbol
+"
+" param[in] results - List of locations, one per line
+"
+" Format of each line: <path>,<line>\s<text>\sfunction: <caller path>
+function! rtags#ViewReferences(results)
+    let cmd = g:rtagsMaxSearchResultWindowHeight . "new References"
+    silent execute cmd
+    setlocal noswapfile
+    setlocal buftype=nowrite
+    setlocal bufhidden=delete
+    setlocal nowrap
+    setlocal tw=0
+
+    iabc <buffer>
+
+    setlocal modifiable
+    silent normal ggdG
+    setlocal nomodifiable
+    let b:rtagsLocations=[]
+    call rtags#AddReferences(a:results, -1)
+    setlocal modifiable
+    silent normal ggdd
+    setlocal nomodifiable
+
+    let cpo_save = &cpo
+    set cpo&vim
+    nnoremap <buffer> <cr> :call <SID>OpenReference()<cr>
+    nnoremap <buffer> o    :call <SID>ExpandReferences()<cr>
+    let &cpo = cpo_save
+endfunction
+
+"
+" Expands the callers of the reference on the current line.
+"
+function! s:ExpandReferences() " <<<
+    let ln = line(".")
+    let l = getline(ln)
+
+    " Detect expandable region
+    let nr = matchlist(l, '#\([0-9]\+\)$')[1]
+    if !empty(b:rtagsLocations[nr].source)
+        let location = b:rtagsLocations[nr].source
+        let b:rtagsLocations[nr].source = ''
+        let args = {
+                \ '--containing-function-location' : '',
+                \ '-r' : location }
+        call rtags#ExecuteThen(args, [[function('rtags#AddReferences'), nr]])
+    endif
+endfunction " >>>
+
+"
+" Opens the reference for viewing in the window below.
+"
+function! s:OpenReference() " <<<
+    let ln = line(".")
+    let l = getline(ln)
+
+    " Detect openable region
+    let nr = matchlist(l, '#\([0-9]\+\)$')[1]
+    if !empty(nr)
+        let jump_file = b:rtagsLocations[nr].filename
+        let lnum = b:rtagsLocations[nr].lnum
+        let col = b:rtagsLocations[nr].col
+        wincmd j
+        " Add location to the jumplist
+        normal m'
+        if rtags#jumpToLocation(jump_file, lnum, col)
+            normal zz
+        endif
+    endif
+endfunction " >>>
+
+"
+" Adds the list of references below the targeted item in the reference
+" viewer window.
+"
+" param[in] results - List of locations, one per line
+" param[in] i - The index of the reference the added references are calling or -1
+"
+" Format of each line: <path>,<line>\s<text>\sfunction: <caller path>
+function! rtags#AddReferences(results, i)
+    let ln = line(".")
+    let nr = len(b:rtagsLocations)
+    let depth = 0
+    if a:i >= 0
+        let depth = b:rtagsLocations[a:i].depth + 1
+        silent execute "normal! gg/#".a:i."$\<cr>"
+    endif
+    let prefix = repeat(" ", depth * 2)
+    setlocal modifiable
+    for record in a:results
+        let [line; sourcefunc] = split(record, '\s\+function: ')
+        let [location; rest] = split(line, '\s\+')
+        let [file, lnum, col] = rtags#parseSourceLocation(location)
+        let entry = {}
+        let entry.filename = substitute(file, getcwd().'/', '', 'g')
+        let entry.filepath = file
+        let entry.lnum = lnum
+        let entry.col = col
+        let entry.vcol = 0
+        let entry.text = join(rest, ' ')
+        let entry.type = 'ref'
+        let entry.depth = depth
+        let entry.source = matchstr(sourcefunc, '[^\s]\+')
+        " TODO Hide the index number of the entry - this is an implementation
+        " detail that shouldn't be visible to the user.
+        silent execute "normal! A\<cr>\<esc>i".prefix . substitute(entry.filename, '.*/', '', 'g').':'.entry.lnum.' '.entry.text.' #'.nr."\<esc>"
+        call add(b:rtagsLocations, entry)
+        let nr = nr + 1
+    endfor
+    setlocal nomodifiable
+    exec (":" . ln)
+endfunction
+
+"
+" param[in] results - Data get by rc diagnose command (XML format)
+"
+function! rtags#DisplayDiagnosticsResults(results)
+    exe 'sign unplace *'
+    exe 'sign define fixit text=F texthl=FixIt'
+    exe 'sign define warning text=W texthl=Warning'
+    exe 'sign define error text=E texthl=Error'
+
+python3 << endpython
+import json
+import xml.etree.ElementTree as ET
+
+tree = ET.fromstring('\n'.join(vim.eval("a:results")))
+file = tree.find('file')
+errors = file.findall('error')
+name = file.get('name')
+
+quickfix_errors = []
+for i, e in enumerate(errors):
+    severity = e.get('severity')
+    if severity == 'skipped':
+        continue
+    line = e.get('line')
+    column = e.get('column')
+    message = e.get('message')
+
+    # strip error prefix
+    s = ' Issue: '
+    index = message.find(s)
+    if index != -1:
+      message = message[index + len(s):]
+
+    error_type = 'E' if severity == 'error' else 'W'
+
+    quickfix_errors.append({'lnum': line, 'col': column, 'nr': i, 'text': message, 'filename': name, 'type': error_type})
+    cmd = 'sign place %d line=%s name=%s file=%s' % (i + 1, line, severity, name)
+    vim.command(cmd)
+
+vim.eval('rtags#DisplayLocations(%s)' % json.dumps(quickfix_errors))
+endpython
 endfunction
 
 function! rtags#getRcCmd()
@@ -619,6 +779,14 @@ function! rtags#FindRefs()
                 \ '-r' : rtags#getCurrentLocation() }
 
     call rtags#ExecuteThen(args, [function('rtags#DisplayResults')])
+endfunction
+
+function! rtags#FindRefsCallTree()
+    let args = {
+                \ '--containing-function-location' : '',
+                \ '-r' : rtags#getCurrentLocation() }
+
+    call rtags#ExecuteThen(args, [function('rtags#ViewReferences')])
 endfunction
 
 function! rtags#FindSuperClasses()
