@@ -419,49 +419,6 @@ function! rtags#AddReferences(results, i)
     exec (":" . ln)
 endfunction
 
-"
-" param[in] results - Data get by rc diagnose command (XML format)
-"
-function! rtags#DisplayDiagnosticsResults(results)
-    exe 'sign unplace *'
-    exe 'sign define fixit text=F texthl=FixIt'
-    exe 'sign define warning text=W texthl=Warning'
-    exe 'sign define error text=E texthl=Error'
-
-python3 << endpython
-import json
-import xml.etree.ElementTree as ET
-
-tree = ET.fromstring('\n'.join(vim.eval("a:results")))
-file = tree.find('file')
-errors = file.findall('error')
-name = file.get('name')
-
-quickfix_errors = []
-for i, e in enumerate(errors):
-    severity = e.get('severity')
-    if severity == 'skipped':
-        continue
-    line = e.get('line')
-    column = e.get('column')
-    message = e.get('message')
-
-    # strip error prefix
-    s = ' Issue: '
-    index = message.find(s)
-    if index != -1:
-      message = message[index + len(s):]
-
-    error_type = 'E' if severity == 'error' else 'W'
-
-    quickfix_errors.append({'lnum': line, 'col': column, 'nr': i, 'text': message, 'filename': name, 'type': error_type})
-    cmd = 'sign place %d line=%s name=%s file=%s' % (i + 1, line, severity, name)
-    vim.command(cmd)
-
-vim.eval('rtags#DisplayLocations(%s)' % json.dumps(quickfix_errors))
-endpython
-endfunction
-
 function! rtags#getRcCmd()
     let cmd = g:rtagsRcCmd
     let cmd .= " --absolute-path "
