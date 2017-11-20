@@ -8,6 +8,17 @@ else
     let s:rtagsAsync = 0
 endif
 
+if has('python')
+    let g:rtagsPy = 'python'
+elseif has('python3')
+    let g:rtagsPy = 'python3'
+else
+    echohl ErrorMsg | echomsg "[vim-rtags] Vim is missing python support" . output | echohl None
+    finish
+end
+
+
+
 if !exists("g:rtagsRcCmd")
     let g:rtagsRcCmd = "rc"
 endif
@@ -90,15 +101,13 @@ endif
 let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
 
 function! rtags#InitPython()
-python << endpython
-import vim
+    let s:pyInitScript = "
+\ import vim;
+\ script_folder = vim.eval('s:script_folder_path');
+\ sys.path.insert(0, script_folder);
+\ import vimrtags"
 
-script_folder = vim.eval('s:script_folder_path')
-sys.path.insert(0, script_folder)
-
-import vimrtags
-
-endpython
+    exe g:rtagsPy." ".s:pyInitScript
 endfunction
 
 call rtags#InitPython()
