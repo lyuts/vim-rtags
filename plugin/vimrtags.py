@@ -2,6 +2,7 @@ import vim
 import json
 import subprocess
 import io
+import os
 
 import logging
 logging.basicConfig(filename='/tmp/vim-rtags-python.log',level=logging.DEBUG)
@@ -19,7 +20,8 @@ def get_identifier_beginning():
     return column + 1
 
 def run_rc_command(arguments, content = None):
-    r = subprocess.run('rc ' + arguments, input = content,
+    rc_cmd = os.path.expanduser(vim.eval('g:rtagsRcCmd'))
+    r = subprocess.run(rc_cmd + " " + arguments, input = content,
             stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True,
             encoding = 'utf-8')
 
