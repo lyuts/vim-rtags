@@ -926,7 +926,11 @@ function! rtags#CompleteAtCursor(wordStart, base)
 endfunction
 
 function! s:Pyeval( eval_string )
-  return pyeval( a:eval_string )
+  if g:rtagsPy == 'python3'
+      return py3eval( a:eval_string )
+  else
+      return pyeval( a:eval_string )
+  endif
 endfunction
     
 function! s:RcExecuteJobCompletion()

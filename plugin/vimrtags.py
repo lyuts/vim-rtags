@@ -3,6 +3,7 @@ import json
 import subprocess
 import io
 import os
+import sys
 
 import logging
 logging.basicConfig(filename='/tmp/vim-rtags-python.log',level=logging.DEBUG)
@@ -21,15 +22,50 @@ def get_identifier_beginning():
 
 def run_rc_command(arguments, content = None):
     rc_cmd = os.path.expanduser(vim.eval('g:rtagsRcCmd'))
-    r = subprocess.run(rc_cmd + " " + arguments, input = content,
-            stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True,
-            encoding = 'utf-8')
+    cmdline = rc_cmd + " " + arguments
+
+    encoding = 'utf-8'
+    out = None
+    err = None
+    if sys.version_info.major == 3 and sys.version_info.minor >= 5:
+        r = subprocess.run(
+            cmdline.split(),
+            input = content,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.PIPE,
+            shell = True,
+            encoding = encoding
+        )
+        out, err = r.stdout, r.stderr
+
+    elif sys.version_info.major == 3 and sys.version_info.minor < 5:
+        r = subprocess.Popen(
+            cmdline.split(),
+            bufsize=0,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        out, err = r.communicate(input=content.encode(encoding))
+        if not out is None:
+            out = out.decode(encoding)
+        if not err is None:
+            err = err.decode(encoding)
+    else:
+        r = subprocess.Popen(
+            cmdline.split(),
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        out, err = r.communicate(input=content)
 
     if r.returncode != 0:
-        logging.debug(r.stderr)
+        logging.debug(err)
         return None
 
-    return r.stdout
+    return out
+
 
 def get_rtags_variable(name):
     return vim.eval('g:rtags' + name)
