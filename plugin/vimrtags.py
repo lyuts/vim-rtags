@@ -193,3 +193,5 @@ def get_diagnostics():
                 return None
 
             display_diagnostics_results(content, buffer)
+
+    return 0
