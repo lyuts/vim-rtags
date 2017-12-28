@@ -4,9 +4,11 @@ import subprocess
 import io
 import os
 import sys
+import tempfile
 
 import logging
-logging.basicConfig(filename='/tmp/vim-rtags-python.log',level=logging.DEBUG)
+tempdir = tempfile.gettempdir()
+logging.basicConfig(filename='%s/vim-rtags-python.log' % tempdir,level=logging.DEBUG)
 
 def get_identifier_beginning():
     line = vim.eval('s:line')
