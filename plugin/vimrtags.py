@@ -183,7 +183,7 @@ def get_diagnostics():
             is_modified = bool(int((vim.eval('getbufvar(%d, "&mod")' % buffer.number))))
             cmd = '--diagnose %s --synchronous-diagnostics --json' % filename
 
-            content = None
+            content = ''
             if is_modified:
                 content = '\n'.join([x for x in buffer])
                 cmd += ' --unsaved-file=%s:%d' % (filename, len(content))
