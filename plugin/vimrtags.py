@@ -33,10 +33,13 @@ def run_rc_command(arguments, content = None):
             input = content,
             stdout = subprocess.PIPE,
             stderr = subprocess.PIPE,
-            shell = True,
-            encoding = encoding
+            shell = True
         )
         out, err = r.stdout, r.stderr
+        if not out is None:
+            out = out.decode(encoding)
+        if not err is None:
+            err = err.decode(encoding)
 
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         r = subprocess.Popen(
