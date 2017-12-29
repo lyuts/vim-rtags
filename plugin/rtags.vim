@@ -13,7 +13,7 @@ if has('python')
 elseif has('python3')
     let g:rtagsPy = 'python3'
 else
-    echohl ErrorMsg | echomsg "[vim-rtags] Vim is missing python support" . output | echohl None
+    echohl ErrorMsg | echomsg "[vim-rtags] Vim is missing python support" | echohl None
     finish
 end
 
