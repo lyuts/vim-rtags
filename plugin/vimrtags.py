@@ -32,10 +32,9 @@ def run_rc_command(arguments, content = None):
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
         r = subprocess.run(
             cmdline.split(),
-            input = content,
+            input = content.encode(encoding),
             stdout = subprocess.PIPE,
             stderr = subprocess.PIPE,
-            shell = True
         )
         out, err = r.stdout, r.stderr
         if not out is None:
