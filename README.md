@@ -42,6 +42,11 @@ default mappings can be disabled:
 
     let g:rtagsUseDefaultMappings = 0
 
+Define custom mappings prefix:
+	let g:rtagsLeader
+default:
+	'<leader>r'
+
 By default, search results are showed in a location list. Location lists
 are local to the current window. To use the vim QuickFix window, which is
 shared between all windows, set:

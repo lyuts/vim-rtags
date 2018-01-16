@@ -79,6 +79,11 @@ g:rtagsUseDefaultMappings
     Otherwise, no mappings are set up and custom mappings can be configured by
     a user.
 
+											*g:rtagsLeader*
+g:rtagsLeader
+	Default: '<leader>r'
+	If you want to custom mappings prefix, set it.
+
                                         *g:rtagsMinCharsForCommandCompletion*
                                         *rtags-variable-min-chars-for-cmd-compl*
 g:rtagsMinCharsForCommandCompletion
