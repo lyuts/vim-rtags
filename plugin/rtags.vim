@@ -59,7 +59,7 @@ endif
 
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
-    if v:shell_error != 0 
+    if v:shell_error != 0
         call system(g:rtagsRdmCmd." --daemon > /dev/null")
     end
 end
@@ -96,6 +96,7 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
     noremap <Leader>rc :call rtags#FindSubClasses()<CR>
     noremap <Leader>rd :call rtags#Diagnostics()<CR>
+	noremap <Leader>rD :call rtags#DiagnosticsAll()<CR>
 endif
 
 let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
@@ -534,7 +535,7 @@ function! rtags#saveLocation()
 endfunction
 
 function! rtags#pushToStack(location)
-    let jumpListLen = len(g:rtagsJumpStack) 
+    let jumpListLen = len(g:rtagsJumpStack)
     if jumpListLen > g:rtagsJumpStackMaxSize
         call remove(g:rtagsJumpStack, 0)
     endif
@@ -727,7 +728,7 @@ function! rtags#ExecuteHandlers(output, handlers)
                 return
             endtry
         endif
-    endfor 
+    endfor
 endfunction
 
 function! rtags#ExecuteThen(args, handlers)
@@ -880,6 +881,10 @@ function! rtags#Diagnostics()
     return s:Pyeval("vimrtags.get_diagnostics()")
 endfunction
 
+function! rtags#DiagnosticsAll()
+	return s:Pyeval("vimrtags.get_diagnostics_all()")
+endfunction
+
 "
 " This function assumes it is invoked from insert mode
 "
@@ -887,7 +892,7 @@ function! rtags#CompleteAtCursor(wordStart, base)
     let flags = "--synchronous-completions -l"
     let file = expand("%:p")
     let pos = getpos('.')
-    let line = pos[1] 
+    let line = pos[1]
     let col = pos[2]
 
     if index(['.', '::', '->'], a:base) != -1
@@ -932,7 +937,7 @@ function! s:Pyeval( eval_string )
       return pyeval( a:eval_string )
   endif
 endfunction
-    
+
 function! s:RcExecuteJobCompletion()
     call rtags#SetJobStateFinish()
     if ! empty(b:rtags_state['stdout']) && mode() == 'i'
@@ -1062,7 +1067,7 @@ endf
 "     - invoke completion through rc
 "     - filter out options that start with meth (in this case).
 "     - show completion options
-" 
+"
 "     Reason: rtags returns all options regardless of already type method name
 "     portion
 """

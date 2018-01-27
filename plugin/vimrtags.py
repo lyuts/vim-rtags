@@ -34,15 +34,14 @@ def run_rc_command(arguments, content = None):
             cmdline.split(),
             input = content,
             stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE,
-            shell = True
+            stderr = subprocess.PIPE
         )
         out, err = r.stdout, r.stderr
         if not out is None:
             out = out.decode(encoding)
         if not err is None:
             err = err.decode(encoding)
-o
+
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         r = subprocess.Popen(
             cmdline.split(),
@@ -134,14 +133,21 @@ def display_locations(errors, buffer):
     max_height = int(get_rtags_variable('MaxSearchResultWindowHeight'))
     height = min(max_height, len(errors))
 
-    if int(get_rtags_variable('UseLocationList')) == 1:
+    if buffer is not None and int(get_rtags_variable('UseLocationList')) == 1:
         vim.eval('setloclist(%d, %s)' % (buffer.number, error_data))
         vim.command('lopen %d' % height)
     else:
         vim.eval('setqflist(%s)' % error_data)
         vim.command('copen %d' % height)
 
-def display_diagnostics_results(data, buffer):
+def find_buffer(name):
+    for buffer in vim.buffers:
+        if buffer.name == name:
+            return buffer
+    else:
+        return None
+
+def display_diagnostics_results(data, buffer=None):
     data = json.loads(data)
     logging.debug(data)
 
@@ -152,48 +158,58 @@ def display_diagnostics_results(data, buffer):
     if check_style == None:
         return
 
-    filename, errors = list(check_style.items())[0]
     quickfix_errors = []
 
     vim.command('sign define fixit text=F texthl=FixIt')
     vim.command('sign define warning text=W texthl=Warning')
     vim.command('sign define error text=E texthl=Error')
 
-    for i, e in enumerate(errors):
-        if e['type'] == 'skipped':
-            continue
+    for filename, errors in check_style.items():
+        for i, e in enumerate(errors):
+            if e['type'] == 'skipped':
+                continue
 
-        # strip error prefix
-        s = ' Issue: '
-        index = e['message'].find(s)
-        if index != -1:
-            e['message'] = e['message'][index + len(s):]
-            error_type = 'E' if e['type'] == 'error' else 'W'
-            quickfix_errors.append({'lnum': e['line'], 'col': e['column'],
-                'nr': i, 'text': e['message'], 'filename': filename,
-                'type': error_type})
-            cmd = 'sign place %d line=%s name=%s file=%s' % (i + 1, e['line'], e['type'], filename)
-            vim.command(cmd)
+            # strip error prefix
+            s = ' Issue: '
+            index = e['message'].find(s)
+            if index != -1:
+                e['message'] = e['message'][index + len(s):]
+                error_type = 'E' if e['type'] == 'error' else 'W'
+                quickfix_errors.append({'lnum': e['line'], 'col': e['column'],
+                    'nr': i, 'text': e['message'], 'filename': filename,
+                    'type': error_type})
+                if find_buffer(filename) is not None:
+                    cmd = 'sign place %d line=%s name=%s file=%s' % (
+                        i + 1, e['line'], e['type'], filename)
+                    vim.command(cmd)
 
     display_locations(quickfix_errors, buffer)
 
 def get_diagnostics():
     filename = vim.eval('s:file')
 
-    for buffer in vim.buffers:
-        if buffer.name == filename:
-            is_modified = bool(int((vim.eval('getbufvar(%d, "&mod")' % buffer.number))))
-            cmd = '--diagnose %s --synchronous-diagnostics --json' % filename
+    buffer = find_buffer(filename)
+    if buffer is None:
+        return None
+    is_modified = bool(int((vim.eval('getbufvar(%d, "&mod")' % buffer.number))))
+    cmd = '--diagnose %s --synchronous-diagnostics --json' % filename
 
-            content = ''
-            if is_modified:
-                content = '\n'.join([x for x in buffer])
-                cmd += ' --unsaved-file=%s:%d' % (filename, len(content))
+    content = ''
+    if is_modified:
+        content = '\n'.join([x for x in buffer])
+        cmd += ' --unsaved-file=%s:%d' % (filename, len(content))
 
-            content = run_rc_command(cmd, content)
-            if content == None:
-                return None
+    content = run_rc_command(cmd, content)
+    if content == None:
+        return None
 
-            display_diagnostics_results(content, buffer)
+    display_diagnostics_results(content, buffer)
 
+    return 0
+
+def get_diagnostics_all():
+    content = run_rc_command('--diagnose-all  --synchronous-diagnostics --json')
+    if content is None:
+        return None
+    display_diagnostics_results(content)
     return 0
