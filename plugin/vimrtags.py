@@ -8,7 +8,8 @@ import tempfile
 
 import logging
 tempdir = tempfile.gettempdir()
-logging.basicConfig(filename='%s/vim-rtags-python.log' % tempdir,level=logging.DEBUG)
+logfile = '%s/vim-rtags-python.log' % tempdir
+logging.basicConfig(filename=logfile, level=logging.DEBUG)
 
 def get_identifier_beginning():
     line = vim.eval('s:line')
@@ -66,6 +67,9 @@ def run_rc_command(arguments, content = None):
 
     if r.returncode != 0:
         logging.debug(err)
+        return None
+    elif "is not indexed" in out:
+        logging.debug(out)
         return None
 
     return out
@@ -159,7 +163,7 @@ def display_diagnostics_results(data, buffer):
 
     # There are no errors
     if check_style == None:
-        return
+        return message('No errors found')
 
     quickfix_errors = []
 
@@ -186,14 +190,16 @@ def display_diagnostics_results(data, buffer):
                         i + 1, e['line'], e['type'], filename)
                     vim.command(cmd)
 
-    display_locations(quickfix_errors, buffer)
+    # There are no errors
+    if not quickfix_errors:
+        return message('No errors found')
+    else:
+        display_locations(quickfix_errors, buffer)
 
 def get_diagnostics():
     buffer = find_buffer()
-    if buffer is None:
-        return None
     is_modified = bool(int((vim.eval('getbufvar(%d, "&mod")' % buffer.number))))
-    cmd = '--diagnose %s --synchronous-diagnostics --json' % filename
+    cmd = '--diagnose %s --synchronous-diagnostics --json' % buffer.name
 
     content = ''
     if is_modified:
@@ -202,18 +208,21 @@ def get_diagnostics():
 
     content = run_rc_command(cmd, content)
     if content == None:
-        return None
+        return error('Failed to get diagnostics for "%s"' % buffer.name)
 
     display_diagnostics_results(content, buffer)
 
     return 0
 
 def get_diagnostics_all():
-    buffer = find_buffer()
-    if buffer is None:
-        return None
     content = run_rc_command('--diagnose-all  --synchronous-diagnostics --json')
     if content is None:
-        return None
-    display_diagnostics_results(content, buffer)
+        return error('Failed to get diagnostics')
+    display_diagnostics_results(content, find_buffer())
     return 0
+
+def error(msg):
+    message('%s: see log file at "%s" for more information' % (msg, logfile))
+
+def message(msg):
+    vim.command("echom '%s'" % msg)
