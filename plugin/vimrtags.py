@@ -42,7 +42,7 @@ def run_rc_command(arguments, content = None):
             out = out.decode(encoding)
         if not err is None:
             err = err.decode(encoding)
-
+o
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         r = subprocess.Popen(
             cmdline.split(),
