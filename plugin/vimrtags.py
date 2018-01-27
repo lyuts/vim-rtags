@@ -134,21 +134,23 @@ def display_locations(errors, buffer):
     max_height = int(get_rtags_variable('MaxSearchResultWindowHeight'))
     height = min(max_height, len(errors))
 
-    if buffer is not None and int(get_rtags_variable('UseLocationList')) == 1:
+    if int(get_rtags_variable('UseLocationList')) == 1:
         vim.eval('setloclist(%d, %s)' % (buffer.number, error_data))
         vim.command('lopen %d' % height)
     else:
         vim.eval('setqflist(%s)' % error_data)
         vim.command('copen %d' % height)
 
-def find_buffer(name):
+def find_buffer(filename=None):
+    if filename is None:
+        filename = vim.eval('s:file')
     for buffer in vim.buffers:
-        if buffer.name == name:
+        if buffer.name == filename:
             return buffer
     else:
         return None
 
-def display_diagnostics_results(data, buffer=None):
+def display_diagnostics_results(data, buffer):
     data = json.loads(data)
     logging.debug(data)
 
@@ -187,9 +189,7 @@ def display_diagnostics_results(data, buffer=None):
     display_locations(quickfix_errors, buffer)
 
 def get_diagnostics():
-    filename = vim.eval('s:file')
-
-    buffer = find_buffer(filename)
+    buffer = find_buffer()
     if buffer is None:
         return None
     is_modified = bool(int((vim.eval('getbufvar(%d, "&mod")' % buffer.number))))
@@ -209,8 +209,11 @@ def get_diagnostics():
     return 0
 
 def get_diagnostics_all():
+    buffer = find_buffer()
+    if buffer is None:
+        return None
     content = run_rc_command('--diagnose-all  --synchronous-diagnostics --json')
     if content is None:
         return None
-    display_diagnostics_results(content)
+    display_diagnostics_results(content, buffer)
     return 0

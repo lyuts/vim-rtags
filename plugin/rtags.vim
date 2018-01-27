@@ -882,6 +882,7 @@ function! rtags#Diagnostics()
 endfunction
 
 function! rtags#DiagnosticsAll()
+	let s:file = expand("%:p")
 	return s:Pyeval("vimrtags.get_diagnostics_all()")
 endfunction
 
