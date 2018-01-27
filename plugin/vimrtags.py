@@ -129,6 +129,7 @@ def display_locations(errors, buffer):
     if len(errors) == 0:
         return
 
+    errors = sorted(errors, key=lambda e: e['type'])
     error_data = json.dumps(errors)
     max_height = int(get_rtags_variable('MaxSearchResultWindowHeight'))
     height = min(max_height, len(errors))
