@@ -5,10 +5,11 @@ import io
 import os
 import sys
 import tempfile
+import getpass
 
 import logging
 tempdir = tempfile.gettempdir()
-logging.basicConfig(filename='%s/vim-rtags-python.log' % tempdir,level=logging.DEBUG)
+logging.basicConfig(filename=os.path.join(tempdir, '{user_name}-vim-rtags-python.log'.format(user_name=getpass.getuser())),level=logging.DEBUG)
 
 def get_identifier_beginning():
     line = vim.eval('s:line')
