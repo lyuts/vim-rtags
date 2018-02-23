@@ -27,6 +27,10 @@ if !exists("g:rtagsRdmCmd")
     let g:rtagsRdmCmd = "rdm"
 endif
 
+if !exists("g:rtagsRdmLogFile")
+    let g:rtagsRdmLogFile = "/dev/null"
+endif
+
 if !exists("g:rtagsAutoLaunchRdm")
     let g:rtagsAutoLaunchRdm = 0
 endif
@@ -57,10 +61,18 @@ if !exists("g:rtagsMaxSearchResultWindowHeight")
     let g:rtagsMaxSearchResultWindowHeight = 10
 endif
 
+if !exists("g:rtagsAutoDiagnostics")
+    let g:rtagsAutoDiagnostics = 1
+endif
+
+if !exists("g:rtagsCppOmnifunc")
+    let g:rtagsCppOmnifunc = 1
+endif
+
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
     if v:shell_error != 0
-        call system(g:rtagsRdmCmd." --daemon > /dev/null")
+        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLogFile)
     end
 end
 
@@ -96,7 +108,8 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
     noremap <Leader>rc :call rtags#FindSubClasses()<CR>
     noremap <Leader>rd :call rtags#Diagnostics()<CR>
-	noremap <Leader>rD :call rtags#DiagnosticsAll()<CR>
+    noremap <Leader>rD :call rtags#DiagnosticsAll()<CR>
+    noremap <Leader>rx :call rtags#ApplyFixit()<CR>
 endif
 
 let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
@@ -482,6 +495,10 @@ function! rtags#JumpToHandler(results, args)
     if len(results) > 1
         call rtags#DisplayResults(results)
     elseif len(results) == 1
+        if results[0] == "Not indexed"
+            echom "Failed to jump - file is not indexed"
+            return
+        endif
         let [location; symbol_detail] = split(results[0], '\s\+')
         let [jump_file, lnum, col; rest] = split(location, ':')
 
@@ -877,13 +894,50 @@ function! rtags#FindSymbolsOfWordUnderCursor()
 endfunction
 
 function! rtags#Diagnostics()
-    let s:file = expand("%:p")
-    return s:Pyeval("vimrtags.get_diagnostics()")
+    return s:Pyeval("vimrtags.Buffer.current().show_diagnostics_list()")
 endfunction
 
 function! rtags#DiagnosticsAll()
-	let s:file = expand("%:p")
-	return s:Pyeval("vimrtags.get_diagnostics_all()")
+    return s:Pyeval("vimrtags.Buffer.show_all_diagnostics()")
+endfunction
+
+function! rtags#ApplyFixit()
+    return s:Pyeval("vimrtags.Buffer.current().apply_fixits()")
+endfunction
+
+function! rtags#NotifyEdit()
+    return s:Pyeval("vimrtags.Buffer.current().on_edit()")
+endfunction
+
+function! rtags#NotifyWrite()
+    return s:Pyeval("vimrtags.Buffer.current().on_write()")
+endfunction
+
+function! rtags#NotifyIdle()
+    return s:Pyeval("vimrtags.Buffer.current().on_idle()")
+endfunction
+
+function! rtags#NotifyCursorMoved()
+    return s:Pyeval("vimrtags.Buffer.current().on_cursor_moved()")
+endfunction
+
+if g:rtagsAutoDiagnostics == 1
+    augroup rtags_auto_diagnostics
+        autocmd!
+        autocmd BufWritePost *.cpp,*.c,*.hpp,*.h call rtags#NotifyWrite()
+        autocmd TextChanged,TextChangedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyEdit()
+        autocmd CursorHold,CursorHoldI,BufEnter *.cpp,*.c,*.hpp,*.h call rtags#NotifyIdle()
+        autocmd CursorMoved,CursorMovedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyCursorMoved()
+    augroup END
+endif
+
+" Generic function to get output of a command.
+" Used in python for things that can't be read directly via vim.eval(...)
+function! rtags#getCommandOutput(cmd_txt) abort
+  redir => output
+    silent execute a:cmd_txt
+  redir END
+  return output
 endfunction
 
 "
@@ -1098,7 +1152,11 @@ function! s:RtagsCompleteFunc(findstart, base, async)
     endif
 endfunction
 
-if &completefunc == ""
+" Prefer omnifunc, if enabled.
+if g:rtagsCppOmnifunc == 1
+    autocmd Filetype cpp setlocal omnifunc=RtagsCompleteFunc
+" Override completefunc if it's available to be used.
+elseif &completefunc == ""
     set completefunc=RtagsCompleteFunc
 endif
 
