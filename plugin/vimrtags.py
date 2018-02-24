@@ -1,7 +1,6 @@
 import vim
 import json
 import subprocess
-import io
 import os
 import sys
 import tempfile
@@ -22,6 +21,7 @@ def configure_logger():
     logger.addHandler(handler)
     logger.setLevel(loglevel)
 
+
 configure_logger()
 
 
@@ -37,7 +37,8 @@ def get_identifier_beginning():
 
     return column + 1
 
-def run_rc_command(arguments, content = None):
+
+def run_rc_command(arguments, content=None):
     rc_cmd = os.path.expanduser(vim.eval('g:rtagsRcCmd'))
     cmdline = [rc_cmd] + arguments
 
@@ -48,14 +49,14 @@ def run_rc_command(arguments, content = None):
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
         r = subprocess.run(
             cmdline,
-            input = content and content.encode("utf-8"),
-            stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE
+            input=content and content.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
         out, err = r.stdout, r.stderr
-        if not out is None:
+        if out is not None:
             out = out.decode(encoding)
-        if not err is None:
+        if err is not None:
             err = err.decode(encoding)
 
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
@@ -67,9 +68,9 @@ def run_rc_command(arguments, content = None):
             stderr=subprocess.STDOUT
         )
         out, err = r.communicate(input=content.encode(encoding))
-        if not out is None:
+        if out is not None:
             out = out.decode(encoding)
-        if not err is None:
+        if err is not None:
             err = err.decode(encoding)
     else:
         r = subprocess.Popen(
@@ -93,31 +94,33 @@ def run_rc_command(arguments, content = None):
 def get_rtags_variable(name):
     return vim.eval('g:rtags' + name)
 
+
 def parse_completion_result(data):
     result = json.loads(data)
     logger.debug(result)
     completions = []
 
     for c in result['completions']:
-      k = c['kind']
-      kind = ''
-      if k == 'FunctionDecl' or k == 'FunctionTemplate':
-        kind = 'f'
-      elif k == 'CXXMethod' or k == 'CXXConstructor':
-        kind = 'm'
-      elif k == 'VarDecl':
-        kind = 'v'
-      elif k == 'macro definition':
-        kind = 'd'
-      elif k == 'EnumDecl':
-        kind = 'e'
-      elif k == 'TypedefDecl' or k == 'StructDecl' or k == 'EnumConstantDecl':
-        kind = 't'
+        k = c['kind']
+        kind = ''
+        if k == 'FunctionDecl' or k == 'FunctionTemplate':
+            kind = 'f'
+        elif k == 'CXXMethod' or k == 'CXXConstructor':
+            kind = 'm'
+        elif k == 'VarDecl':
+            kind = 'v'
+        elif k == 'macro definition':
+            kind = 'd'
+        elif k == 'EnumDecl':
+            kind = 'e'
+        elif k == 'TypedefDecl' or k == 'StructDecl' or k == 'EnumConstantDecl':
+            kind = 't'
 
-      match = {'menu': " ".join([c['parent'], c['signature']]), 'word': c['completion'], 'kind': kind}
-      completions.append(match)
+    match = {'menu': " ".join([c['parent'], c['signature']]), 'word': c['completion'], 'kind': kind}
+    completions.append(match)
 
     return completions
+
 
 def send_completion_request():
     filename = vim.eval('s:file')
@@ -131,14 +134,15 @@ def send_completion_request():
             lines = [x for x in buffer]
             content = '\n'.join(lines[:line - 1] + [lines[line - 1] + prefix] + lines[line:])
 
-            cmd = ('--synchronous-completions -l %s:%d:%d --unsaved-file=%s:%d --json'
-                % (filename, line, column, filename, len(content)))
+            cmd = '--synchronous-completions -l %s:%d:%d --unsaved-file=%s:%d --json' % (
+                filename, line, column, filename, len(content)
+            )
             if len(prefix) > 0:
                 cmd += ' --code-complete-prefix %s' % prefix
 
             content = run_rc_command(cmd, content)
             logger.debug("Got completion: %s" % content)
-            if content == None:
+            if content is None:
                 return None
 
             return parse_completion_result(content)
@@ -621,6 +625,7 @@ class Sign(object):
             group on initialisation (e.g. gitgutter).
         """
         logger.debug("Defining gutter diagnostic signs")
+
         # Recursively search for background colours through group links.
         def get_bgcolour(group):
             logger.debug("Scanning highlight group %s for background colour" % group)
@@ -698,4 +703,3 @@ def error(msg):
 
 def message(msg):
     vim.command("""echom '%s'""" % msg)
-
