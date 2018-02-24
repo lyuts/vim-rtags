@@ -583,14 +583,20 @@ class Diagnostic(object):
     @staticmethod
     def to_qlist_errors(diagnostics):
         num_diagnostics = len(diagnostics)
-        lines = [d._to_qlist_dict() for d in diagnostics]
-        lines = sorted(lines, key=lambda d: (d['type'], d['filename'], d['lnum']))
-        lines = json.dumps(lines)
+        # Sort diagnostics into display order. Errors at top, grouped by filename in line num order.
+        diagnostics = sorted(diagnostics, key=lambda d: (d.type, d.filename, d.line_num))
+        # Convert Diagnostic objects into quickfix compatible dicts.
+        diagnostics = [d._to_qlist_dict() for d in diagnostics]
+        # Add error number to diagnostic (shows in list, maybe useful for navigation?).
+        for idx, diagnostic in enumerate(diagnostics):
+            diagnostic['nr'] = idx + 1
+        diagnostics = json.dumps(diagnostics)
 
+        # Calculate max height of list window.
         max_height = int(get_rtags_variable('MaxSearchResultWindowHeight'))
         height = min(max_height, num_diagnostics)
 
-        return height, lines
+        return height, diagnostics
 
     def __init__(self, filename, line_num, char_num, type_, text):
         self.filename = filename
@@ -600,9 +606,10 @@ class Diagnostic(object):
         self.text = text
 
     def _to_qlist_dict(self):
-        error_type = self.type[0].upper()
+        error_type = "W" if self.type == "warning" else "E"
+        text = self.text if self.type != "fixit" else self.text + " [FIXIT]"
         return {
-            'lnum': self.line_num, 'col': self.char_num, 'text': self.text,
+            'lnum': self.line_num, 'col': self.char_num, 'text': text,
             'filename': self.filename, 'type': error_type
         }
 
