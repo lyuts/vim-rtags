@@ -257,7 +257,7 @@ class Buffer(object):
 
         if self._is_dirty:
             # `TextChange` autocmd also triggers just by switching buffers, so we have to be sure.
-            is_really_dirty = vim.eval('getbufvar(%d, "&mod")' % self._vimbuffer.number)
+            is_really_dirty = int(vim.eval('getbufvar(%d, "&mod")' % self._vimbuffer.number))
         else:
             is_really_dirty = False
 
