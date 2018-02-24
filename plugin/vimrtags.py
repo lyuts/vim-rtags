@@ -514,6 +514,9 @@ class Project(object):
 
     @staticmethod
     def get(filepath):
+        # A blank filename (e.g. loclist) has no project.
+        if not filepath:
+            return None
         # Get rtags project that given file belongs to, if any.
         project_root = run_rc_command('--project %s' % filepath)
         # If rc command line failed, then assume nothing to do.
