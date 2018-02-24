@@ -39,15 +39,15 @@ def get_identifier_beginning():
 
 def run_rc_command(arguments, content = None):
     rc_cmd = os.path.expanduser(vim.eval('g:rtagsRcCmd'))
-    cmdline = rc_cmd + " " + arguments
+    cmdline = [rc_cmd] + arguments
 
     encoding = 'utf-8'
     out = None
     err = None
-    logger.debug("RTags command: %s" % cmdline.split())
+    logger.debug("RTags command: %s" % cmdline)
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
         r = subprocess.run(
-            cmdline.split(),
+            cmdline,
             input = content and content.encode("utf-8"),
             stdout = subprocess.PIPE,
             stderr = subprocess.PIPE
@@ -60,7 +60,7 @@ def run_rc_command(arguments, content = None):
 
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         r = subprocess.Popen(
-            cmdline.split(),
+            cmdline,
             bufsize=0,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -73,7 +73,7 @@ def run_rc_command(arguments, content = None):
             err = err.decode(encoding)
     else:
         r = subprocess.Popen(
-            cmdline.split(),
+            cmdline,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT
@@ -198,7 +198,7 @@ class Buffer(object):
         """ Get all diagnostics for all files and show in quickfix list.
         """
         # Get the diagnostics from rtags.
-        content = run_rc_command('--diagnose-all  --synchronous-diagnostics --json')
+        content = run_rc_command(['--diagnose-all',  '--synchronous-diagnostics', '--json'])
         if content is None:
             return error('Failed to get diagnostics')
         data = json.loads(content)
@@ -323,7 +323,7 @@ class Buffer(object):
             )
 
         # Get the fixits from rtags.
-        content = run_rc_command('--fixits %s' % self._vimbuffer.name)
+        content = run_rc_command(['--fixits', self._vimbuffer.name])
         if content is None:
             return error("Failed to fetch fixits")
         content = content.strip()
@@ -376,6 +376,7 @@ class Buffer(object):
         """
         self._reset_signs()
         used_ids = Sign.used_ids(self._vimbuffer.number)
+        logger.debug("Appending %s signs to %s" % (len(self._diagnostics), self._vimbuffer.name))
         for diagnostic in self._diagnostics.values():
             self._place_sign(diagnostic.line_num, diagnostic.type, used_ids)
 
@@ -383,11 +384,10 @@ class Buffer(object):
         """ Reindex unsaved buffer contents in rtags.
         """
         content = "\n".join([x for x in self._vimbuffer])
-        result = run_rc_command(
-            '--json --reindex {0} --unsaved-file={0}:{1}'.format(
-                self._vimbuffer.name, len(content)
-            ), content
-        )
+        result = run_rc_command([
+            '--json', '--reindex', self._vimbuffer.name,
+            '--unsaved-file=%s:%d' % (self._vimbuffer.name, len(content))
+        ], content)
         self._is_dirty = False
         logger.debug("Rtags responded to reindex request: %s" % result)
 
@@ -395,7 +395,7 @@ class Buffer(object):
         """ Check if rtags has this buffer queued for reindexing.
         """
         # Unfortunately, --check-reindex doesn't work if --unsaved-file used with --reindex.
-        content = run_rc_command('--status jobs')
+        content = run_rc_command(['--status', 'jobs'])
         if content is None:
             return error("Failed to check if %s needs reindex" % self._vimbuffer.name)
         return self._vimbuffer.name in content
@@ -410,7 +410,7 @@ class Buffer(object):
 
         # Get the diagnostics from rtags.
         content = run_rc_command(
-            '--diagnose %s --synchronous-diagnostics --json' % self._vimbuffer.name
+            ['--diagnose', self._vimbuffer.name, '--synchronous-diagnostics', '--json']
         )
         if content is None:
             return error('Failed to get diagnostics for "%s"' % self._vimbuffer.name)
@@ -487,11 +487,6 @@ class Buffer(object):
         # Other plugins could have added signs, so make sure we don't splat them.
         while id_ in used_ids:
             id_ += 1
-        logger.debug(
-            'Appending sign %s on line %s with id %s in buffer %s (%s)' % (
-                name, line_num, id_, self._vimbuffer.number, self._vimbuffer.name
-            )
-        )
         # Construct a Sign, which will also render it in the buffer, and cache it.
         self._signs.append(Sign(id_, line_num, name, self._vimbuffer.number))
 
@@ -518,7 +513,7 @@ class Project(object):
         if not filepath:
             return None
         # Get rtags project that given file belongs to, if any.
-        project_root = run_rc_command('--project %s' % filepath)
+        project_root = run_rc_command(['--project', filepath])
         # If rc command line failed, then assume nothing to do.
         if project_root is None:
             return None
@@ -530,7 +525,7 @@ class Project(object):
         # Lazily find the location of the rtags database. We check the modification date of the DB
         # to decide if/when we need to update our cache.
         if Project._rtags_data_dir is None:
-            info = run_rc_command('--status info')
+            info = run_rc_command(['--status', 'info'])
             logger.debug("RTags info:\n%s" % info)
             match = re.search("^dataDir: (.*)$", info, re.MULTILINE)
             Project._rtags_data_dir = match.group(1)
@@ -626,10 +621,10 @@ class Sign(object):
             group on initialisation (e.g. gitgutter).
         """
         logger.debug("Defining gutter diagnostic signs")
+        # Recursively search for background colours through group links.
         def get_bgcolour(group):
             logger.debug("Scanning highlight group %s for background colour" % group)
             output = get_command_output("highlight %s" % group)
-            logger.debug("Highlight group output:\n%s" % output)
             match = re.search(r"links to (\S+)", output)
             if match is None:
                 ctermbg_match = re.search(r"ctermbg=(\S+)", output)
