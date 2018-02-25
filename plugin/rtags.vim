@@ -944,51 +944,6 @@ function! rtags#getCommandOutput(cmd_txt) abort
   return output
 endfunction
 
-"
-" This function assumes it is invoked from insert mode
-"
-function! rtags#CompleteAtCursor(wordStart, base)
-    let flags = "--synchronous-completions -l"
-    let file = expand("%:p")
-    let pos = getpos('.')
-    let line = pos[1]
-    let col = pos[2]
-
-    if index(['.', '::', '->'], a:base) != -1
-        let col += 1
-    endif
-
-    let rcRealCmd = rtags#getRcCmd()
-
-    exec "normal! \<Esc>"
-    let stdin_lines = join(getline(1, "$"), "\n").a:base
-    let offset = len(stdin_lines)
-
-    exec "startinsert!"
-    "    echomsg getline(line)
-    "    sleep 1
-    "    echomsg "DURING INVOCATION POS: ".pos[2]
-    "    sleep 1
-    "    echomsg stdin_lines
-    "    sleep 1
-    " sed command to remove CDATA prefix and closing xml tag from rtags output
-    let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
-    let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-    call rtags#Log("Command line:".cmd)
-
-    let result = split(system(cmd, stdin_lines), '\n\+')
-    "    echomsg "Got ".len(result)." completions"
-    "    sleep 1
-    call rtags#Log("-----------")
-    "call rtags#Log(result)
-    call rtags#Log("-----------")
-    return result
-    "    for r in result
-    "        echo r
-    "    endfor
-    "    call rtags#DisplayResults(result)
-endfunction
-
 function! s:Pyeval( eval_string )
   if g:rtagsPy == 'python3'
       return py3eval( a:eval_string )
