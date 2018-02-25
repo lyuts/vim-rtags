@@ -412,20 +412,14 @@ class Buffer(object):
         """ Check the dirty flag and confirm the buffer really is modified.
 
             `TextChange` autocmd also triggers just by switching buffers, so we have to be sure.
+            Unfortunately, even this isn't good - if the buffer hasn't been saved and we switch to
+            it, then this check will be True, even if the file hasn't changed since the last
+            reindex.
         """
         self._is_dirty = self._is_dirty and bool(int(
             vim.eval('getbufvar(%d, "&mod")' % self._vimbuffer.number)
         ))
         return self._is_dirty
-
-    def _place_signs(self):
-        """ Add gutter indicator signs next to lines that have diagnostics.
-        """
-        self._reset_signs()
-        used_ids = Sign.used_ids(self._vimbuffer.number)
-        logger.debug("Appending %s signs to %s" % (len(self._diagnostics), self._vimbuffer.name))
-        for diagnostic in self._diagnostics.values():
-            self._place_sign(diagnostic.line_num, diagnostic.type, used_ids)
 
     def _rtags_dirty_reindex(self):
         """ Reindex unsaved buffer contents in rtags.
@@ -521,6 +515,15 @@ class Buffer(object):
         # If we want to open the loclist and we have something to show, then open it.
         if force and height > 0:
             vim.command('lopen %d' % height)
+
+    def _place_signs(self):
+        """ Add gutter indicator signs next to lines that have diagnostics.
+        """
+        self._reset_signs()
+        used_ids = Sign.used_ids(self._vimbuffer.number)
+        logger.debug("Appending %s signs to %s" % (len(self._diagnostics), self._vimbuffer.name))
+        for diagnostic in self._diagnostics.values():
+            self._place_sign(diagnostic.line_num, diagnostic.type, used_ids)
 
     def _place_sign(self, line_num, name, used_ids):
         """ Create, place and remember a diagnostic gutter sign.
