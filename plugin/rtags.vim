@@ -69,16 +69,14 @@ if !exists("g:rtagsAutoDiagnostics")
     let g:rtagsAutoDiagnostics = 1
 endif
 
+if !exists("g:rtagsDiagnosticsPollingInterval")
+    let g:rtagsDiagnosticsPollingInterval = 3000
+endif
+
 if !exists("g:rtagsCppOmnifunc")
     let g:rtagsCppOmnifunc = 1
 endif
 
-if g:rtagsAutoLaunchRdm
-    call system(g:rtagsRcCmd." -w")
-    if v:shell_error != 0
-        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLog)
-    end
-end
 
 let g:SAME_WINDOW = 'same_window'
 let g:H_SPLIT = 'hsplit'
@@ -127,8 +125,6 @@ function! rtags#InitPython()
 
     exe g:rtagsPy." ".s:pyInitScript
 endfunction
-
-call rtags#InitPython()
 
 """
 " Logging routine
@@ -925,15 +921,10 @@ function! rtags#NotifyCursorMoved()
     return s:Pyeval("vimrtags.Buffer.current().on_cursor_moved()")
 endfunction
 
-if g:rtagsAutoDiagnostics == 1
-    augroup rtags_auto_diagnostics
-        autocmd!
-        autocmd BufWritePost *.cpp,*.c,*.hpp,*.h call rtags#NotifyWrite()
-        autocmd TextChanged,TextChangedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyEdit()
-        autocmd CursorHold,CursorHoldI,BufEnter *.cpp,*.c,*.hpp,*.h call rtags#NotifyIdle()
-        autocmd CursorMoved,CursorMovedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyCursorMoved()
-    augroup END
-endif
+function! rtags#Poll(timer)
+    call s:Pyeval("vimrtags.Buffer.current().on_poll()")
+    call timer_start(g:rtagsDiagnosticsPollingInterval, "rtags#Poll")
+endfunction
 
 " Generic function to get output of a command.
 " Used in python for things that can't be read directly via vim.eval(...)
@@ -1141,4 +1132,31 @@ command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilatio
 
 " The most commonly used find operation
 command! -nargs=1 -complete=customlist,rtags#CompleteSymbols Rtag RtagsIFindSymbols <q-args>
+
+
+if g:rtagsAutoLaunchRdm
+    call system(g:rtagsRcCmd." -w")
+    if v:shell_error != 0
+        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLog)
+    end
+end
+
+
+call rtags#InitPython()
+
+
+if g:rtagsAutoDiagnostics == 1
+    augroup rtags_auto_diagnostics
+        autocmd!
+        autocmd BufWritePost *.cpp,*.c,*.hpp,*.h call rtags#NotifyWrite()
+        autocmd TextChanged,TextChangedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyEdit()
+        autocmd CursorHold,CursorHoldI,BufEnter *.cpp,*.c,*.hpp,*.h call rtags#NotifyIdle()
+        autocmd CursorMoved,CursorMovedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyCursorMoved()
+    augroup END
+
+    if g:rtagsDiagnosticsPollingInterval > 0
+        call rtags#Log("Starting async update checking")
+        call rtags#Poll(0)
+    endif
+endif
 

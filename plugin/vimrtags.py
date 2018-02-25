@@ -154,7 +154,7 @@ def send_completion_request():
                 cmd += ['--code-complete-prefix', prefix]
 
             content = run_rc_command(cmd, content)
-            #logger.debug("Got completion: %s" % content)
+            # logger.debug("Got completion: %s" % content)
             if content is None:
                 return None
 
@@ -167,7 +167,6 @@ class Buffer(object):
     _cache = {}
     _cache_last_cleaned = time()
     _CACHE_CLEAN_PERIOD = 30
-    _DIAGNOSTICS_CHECK_PERIOD = 5
     _DIAGNOSTICS_LIST_TITLE = "RTags diagnostics"
     _DIAGNOSTICS_ALL_LIST_TITLE = "RTags diagnostics for all files"
     _FIXITS_LIST_TITLE = "RTags fixits applied"
@@ -206,6 +205,7 @@ class Buffer(object):
                     del Buffer._cache[id_]
             Buffer._cache_last_cleaned = time()
 
+        logger.debug("Wrapping new buffer: %s" % id_)
         buff = Buffer(vim.buffers[id_])
         Buffer._cache[id_] = buff
         return buff
@@ -268,27 +268,47 @@ class Buffer(object):
 
     def on_idle(self):
         """ Reindex or update diagnostics for this buffer.
+
+            Check if the buffer is modified and needs reindexing, if so then reindex, otherwise
+            check if the RTags project for this file has been updated on disk, if so then update
+            diagnostics.
         """
+        # logger.debug("Idle callback for %s" % self._vimbuffer.name)
         if self._project is None:
             return
 
-        if self._is_dirty:
-            # `TextChange` autocmd also triggers just by switching buffers, so we have to be sure.
-            is_really_dirty = int(vim.eval('getbufvar(%d, "&mod")' % self._vimbuffer.number))
-        else:
-            is_really_dirty = False
-
-        if is_really_dirty:
+        if self._is_really_dirty():
             # Reindex dirty buffer - no point refreshing diagnostics at this point.
             logger.debug("Buffer %s needs dirty reindex" % self._vimbuffer.number)
-            self._rtags_dirty_reindex()
-            # No point getting diagnostics any time soon.
             self._last_diagnostics_time = time()
+            self._rtags_dirty_reindex()
 
         elif self._last_diagnostics_time < self._project.last_updated_time():
             # Update diagnostics signs/list.
             logger.debug(
-                "Project updated, checking for updated diagnostics for %s" % self._vimbuffer.name
+                "Project updated (idle), checking for updated diagnostics for %s"
+                % self._vimbuffer.name
+            )
+            self._update_diagnostics()
+
+    def on_poll(self):
+        """ Update diagnostics for this buffer.
+
+            Only update if the buffer does not need reindexing and the RTags project has changed
+            on disk.
+        """
+        # logger.debug(Poll callback for %s" % self._vimbuffer.name)
+        if self._project is None:
+            return
+
+        if (
+            not self._is_really_dirty() and
+            self._last_diagnostics_time < self._project.last_updated_time()
+        ):
+            # Update diagnostics signs/list.
+            logger.debug(
+                "Project updated (polling), checking for updated diagnostics for %s"
+                % self._vimbuffer.name
             )
             self._update_diagnostics()
 
@@ -388,6 +408,16 @@ class Buffer(object):
 
         message("Fixits applied")
 
+    def _is_really_dirty(self):
+        """ Check the dirty flag and confirm the buffer really is modified.
+
+            `TextChange` autocmd also triggers just by switching buffers, so we have to be sure.
+        """
+        self._is_dirty = self._is_dirty and bool(int(
+            vim.eval('getbufvar(%d, "&mod")' % self._vimbuffer.number)
+        ))
+        return self._is_dirty
+
     def _place_signs(self):
         """ Add gutter indicator signs next to lines that have diagnostics.
         """
@@ -431,7 +461,7 @@ class Buffer(object):
         )
         if content is None:
             return error('Failed to get diagnostics for "%s"' % self._vimbuffer.name)
-        #logger.debug("Diagnostics for %s from rtags: %s" % (self._vimbuffer.name, content))
+        # logger.debug("Diagnostics for %s from rtags: %s" % (self._vimbuffer.name, content))
         data = json.loads(content)
         errors = data['checkStyle'][self._vimbuffer.name]
         logger.debug("Got %d diagnostics for %s" % (len(errors), self._vimbuffer.name))
