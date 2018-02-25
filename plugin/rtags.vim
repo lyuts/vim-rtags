@@ -27,8 +27,12 @@ if !exists("g:rtagsRdmCmd")
     let g:rtagsRdmCmd = "rdm"
 endif
 
-if !exists("g:rtagsRdmLogFile")
-    let g:rtagsRdmLogFile = "/dev/null"
+if !exists("g:rtagsLog")
+    let g:rtagsLog = tempname()
+endif
+
+if !exists("g:rtagsRdmLog")
+    let g:rtagsRdmLog = tempname()
 endif
 
 if !exists("g:rtagsAutoLaunchRdm")
@@ -72,7 +76,7 @@ endif
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
     if v:shell_error != 0
-        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLogFile)
+        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLog)
     end
 end
 
@@ -130,9 +134,7 @@ call rtags#InitPython()
 " Logging routine
 """
 function! rtags#Log(message)
-    if exists("g:rtagsLog")
-        call writefile([string(a:message)], g:rtagsLog, "a")
-    endif
+    call writefile([strftime("%Y-%m-%d %H:%M:%S", localtime()) . " | vim | " . string(a:message)], g:rtagsLog, "a")
 endfunction
 
 "
@@ -491,7 +493,7 @@ function! rtags#JumpToHandler(results, args)
     if len(results) >= 0 && open_opt != g:SAME_WINDOW
         call rtags#cloneCurrentBuffer(open_opt)
     endif
-
+    call rtags#Log("JumpTo results with ".json_encode(a:args).": ".json_encode(results))
     if len(results) > 1
         call rtags#DisplayResults(results)
     elseif len(results) == 1
@@ -507,6 +509,8 @@ function! rtags#JumpToHandler(results, args)
         if rtags#jumpToLocation(jump_file, lnum, col)
             normal! zz
         endif
+    else
+        echom "Failed to jump - cannot follow symbol"
     endif
 
 endfunction

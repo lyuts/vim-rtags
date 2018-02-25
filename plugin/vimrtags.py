@@ -3,20 +3,19 @@ import json
 import subprocess
 import os
 import sys
-import tempfile
 import re
 import logging
 from time import time
 
 
-logfile = '%s/vim-rtags-python.log' % tempfile.gettempdir()
 loglevel = logging.DEBUG
 logger = logging.getLogger(__name__)
 
 
 def configure_logger():
+    logfile = vim.eval('g:rtagsLog')
     handler = logging.FileHandler(logfile)
-    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    formatter = logging.Formatter("%(asctime)s | py | %(levelname)s | %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(loglevel)
@@ -29,8 +28,7 @@ def get_identifier_beginning():
     line = vim.eval('s:line')
     column = int(vim.eval('s:start'))
 
-    logger.debug(line)
-    logger.debug(column)
+    logger.debug("Completion line:column=%s:%s" % (line, column))
 
     while column >= 0 and (line[column].isalnum() or line[column] == '_'):
         column -= 1
@@ -97,7 +95,6 @@ def get_rtags_variable(name):
 
 def parse_completion_result(data):
     result = json.loads(data)
-    logger.debug(result)
     completions = []
 
     for c in result['completions']:
@@ -146,7 +143,7 @@ def send_completion_request():
                 cmd += ['--code-complete-prefix', prefix]
 
             content = run_rc_command(cmd, content)
-            logger.debug("Got completion: %s" % content)
+            #logger.debug("Got completion: %s" % content)
             if content is None:
                 return None
 
@@ -218,7 +215,7 @@ class Buffer(object):
             diagnostics += Diagnostic.from_rtags_errors(filename, errors)
 
         if not diagnostics:
-            return message("No errors to show")
+            return message("No errors to display")
 
         # Convert list of Diagnostic objects to quickfix-compatible dict.
         height, lines = Diagnostic.to_qlist_errors(diagnostics)
@@ -423,9 +420,10 @@ class Buffer(object):
         )
         if content is None:
             return error('Failed to get diagnostics for "%s"' % self._vimbuffer.name)
-        logger.debug("Diagnostics for %s from rtags: %s" % (self._vimbuffer.name, content))
+        #logger.debug("Diagnostics for %s from rtags: %s" % (self._vimbuffer.name, content))
         data = json.loads(content)
         errors = data['checkStyle'][self._vimbuffer.name]
+        logger.debug("Got %d diagnostics for %s" % (len(errors), self._vimbuffer.name))
 
         # Construct Diagnostic objects from rtags response, and cache keyed by line number.
         for diagnostic in Diagnostic.from_rtags_errors(self._vimbuffer.name, errors):
@@ -480,11 +478,8 @@ class Buffer(object):
         )
 
         # If we want to open the loclist and we have something to show, then open it.
-        if force:
-            if height > 0:
-                vim.command('lopen %d' % height)
-            else:
-                message("No errors to show")
+        if force and height > 0:
+            vim.command('lopen %d' % height)
 
     def _place_sign(self, line_num, name, used_ids):
         """ Create, place and remember a diagnostic gutter sign.
