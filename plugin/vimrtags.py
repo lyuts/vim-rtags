@@ -102,15 +102,20 @@ def parse_completion_result(data):
         kind = ''
         if k == 'FunctionDecl' or k == 'FunctionTemplate':
             kind = 'f'
+            description = _completion_description(c, ['parent', 'signature'])
         elif k == 'CXXMethod' or k == 'CXXConstructor':
             kind = 'm'
+            description = _completion_description(c, ['parent', 'signature'])
         elif k == 'VarDecl':
             kind = 'v'
+            description = _completion_description(c, ['parent', 'signature'])
         elif k == 'macro definition':
             kind = 'd'
+            description = _completion_description(c, ['signature'])
         elif k == 'EnumDecl':
             kind = 'e'
-        elif k == 'TypedefDecl' or k == 'StructDecl' or k == 'EnumConstantDecl':
+            description = _completion_description(c, ['parent'])
+        elif k in ('TypedefDecl', 'StructDecl', 'EnumConstantDecl', 'ClassDecl', 'FieldDecl'):
             kind = 't'
             description = _completion_description(c, ['parent'])
         else:
@@ -120,6 +125,12 @@ def parse_completion_result(data):
         completions.append(match)
 
     return completions
+
+
+def _completion_description(completion, fields):
+    fields = [field for field in fields if completion[field] != completion['completion']]
+    fields = ['completion'] + fields + ['brief_comment']
+    return " -- ".join(filter(None, [completion[field] for field in fields]))
 
 
 def send_completion_request():
