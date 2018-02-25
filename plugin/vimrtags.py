@@ -115,9 +115,12 @@ def parse_completion_result(data):
             kind = 'e'
         elif k == 'TypedefDecl' or k == 'StructDecl' or k == 'EnumConstantDecl':
             kind = 't'
+            description = _completion_description(c, ['parent'])
+        else:
+            description = _completion_description(c, [])
 
-    match = {'menu': " ".join([c['parent'], c['signature']]), 'word': c['completion'], 'kind': kind}
-    completions.append(match)
+        match = {'menu': description, 'word': c['completion'], 'kind': kind}
+        completions.append(match)
 
     return completions
 
@@ -134,11 +137,13 @@ def send_completion_request():
             lines = [x for x in buffer]
             content = '\n'.join(lines[:line - 1] + [lines[line - 1] + prefix] + lines[line:])
 
-            cmd = '--synchronous-completions -l %s:%d:%d --unsaved-file=%s:%d --json' % (
-                filename, line, column, filename, len(content)
-            )
+            cmd = [
+                    '--synchronous-completions', '-l', '%s:%d:%d' % (filename, line, column),
+                    '--unsaved-file=%s:%d' % (filename, len(content)), '--json'
+                ]
+
             if len(prefix) > 0:
-                cmd += ' --code-complete-prefix %s' % prefix
+                cmd += ['--code-complete-prefix', prefix]
 
             content = run_rc_command(cmd, content)
             logger.debug("Got completion: %s" % content)
