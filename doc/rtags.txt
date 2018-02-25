@@ -79,14 +79,22 @@ g:rtagsUseDefaultMappings
     Otherwise, no mappings are set up and custom mappings can be configured by
     a user.
 
-                                        *g:rtagsMinCharsForCommandCompletion*
-                                        *rtags-variable-min-chars-for-cmd-compl*
+                                        *g:rtagsCppOmnifunc*
+                                        *rtags-variable-cpp-omnifunc*
 g:rtagsMinCharsForCommandCompletion
 
     Default: 4.
     Minimum number of characters to be typed before argument completion is
     available for commands provided by the plugin or pluging mappings that
     require user input.
+
+                                        *g:rtagsMinCharsForCommandCompletion*
+                                        *rtags-variable-min-chars-for-cmd-compl*
+g:rtagsCppOmnifunc
+
+    Default: 1.
+    Override the vim completion |omnifunc| for the cpp filetype. If disabled, then
+    the |completefunc| will be used instead, but only if it's not already set.
 
                                 *g:rtagsMaxSearchResultWindowHeight*
                                 *rtags-variable-max-search-result-window-height*
@@ -103,6 +111,15 @@ g:rtagsLog
 
     Default: empty
     When set to filename, rtags will put its logs in that file.
+
+                                              *g:rtagsAutoDiagnostics*
+                                              *rtags-variable-rtags-auto-diagnostics*
+g:rtagsAutoDiagnostics
+
+    Default: 1
+    If enabled then diagnostic gutter signs will be updated in the currently active
+    buffer automatically, and the diagnostic message will show in the message
+    window as the cursor moves through the file.
 
                                                                 *rtags-mappings*
 4. Mappings
@@ -191,6 +208,24 @@ g:rtagsLog
                                                             *rtags-leader-rc*
                                                             *rtags-FindSubClasses*
     <Leader>rc      Find the subclasses of the class under the cursor.
+
+                                                            *rtags-leader-rd*
+                                                            *rtags-Diagnostics*
+    <Leader>rd      Show diagnostics for the current buffer in the location list,
+                    along withing diagnostic signs in the current window's
+                    gutter.
+
+                                                            *rtags-leader-rD*
+                                                            *rtags-DiagnosticsAll*
+    <Leader>rD      Show diagnostics for the whole project in the location or
+                    quickfix list (depending on the value of
+                    |g:rtagsUseLocationList|). That is, all the errors and
+                    warnings from rdm's clang build of the current project.
+
+                                                          *rtags-leader-rx*
+                                                            *rtags-FixIts*
+    <Leader>rx      Apply diagnostic clang fixits to the current buffer.
+
 
                                                                 *rtags-commands*
 5. Commands
