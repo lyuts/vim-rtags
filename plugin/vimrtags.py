@@ -709,7 +709,7 @@ def invalid_buffer_message(filename):
 
 
 def error(msg):
-    message("""%s: see log file at" "%s" for more information""" % (msg, logfile))
+    message("""%s: see log file at" "%s" for more information""" % (msg, vim.eval('g:rtagsLog')))
 
 
 def message(msg):
