@@ -47,8 +47,8 @@ g:rtagsRdmCmd
     location if it is installed to a non standard location or the location
     doesn't appear in the PATH.
 
-                                                 *g:rtagsAutoLaunchRdm*
-                                                 *rtags-variable-auto-launch-rdm*
+                                            *g:rtagsAutoLaunchRdm*
+                                            *rtags-variable-auto-launch-rdm*
 g:rtagsAutoLaunchRdm
 
     Default: 0.
@@ -79,8 +79,8 @@ g:rtagsUseDefaultMappings
     Otherwise, no mappings are set up and custom mappings can be configured by
     a user.
 
-                                        *g:rtagsCppOmnifunc*
-                                        *rtags-variable-cpp-omnifunc*
+                                                *g:rtagsCppOmnifunc*
+                                                *rtags-variable-cpp-omnifunc*
 g:rtagsMinCharsForCommandCompletion
 
     Default: 4.
@@ -93,8 +93,9 @@ g:rtagsMinCharsForCommandCompletion
 g:rtagsCppOmnifunc
 
     Default: 1.
-    Override the vim completion |omnifunc| for the cpp filetype. If disabled, then
-    the |completefunc| will be used instead, but only if it's not already set.
+    Override the vim completion |omnifunc| for the cpp filetype. If disabled,
+    then the |completefunc| will be used instead, but only if it's not already
+    set.
 
                                 *g:rtagsMaxSearchResultWindowHeight*
                                 *rtags-variable-max-search-result-window-height*
@@ -104,22 +105,39 @@ g:rtagsMaxSearchResultWindowHeight
     Determines the maximum height of the search result window. When number of
     results is less than this parameter, the height is set to the number of
     results.
+                                            *g:rtagsAutoDiagnostics*
+                                            *rtags-variable-auto-diagnostics*
+g:rtagsAutoDiagnostics
+
+    Default: 1
+    If enabled then diagnostic gutter signs will be updated in the currently
+    active buffer automatically, and each line's diagnostic message will show
+    in the message window as the cursor moves through the file.
+
+                                *g:rtagsDiagnosticsPollingInterval*
+                                *rtags-variable-diagnostics-polling-interval*
+g:rtagsDiagnosticsPollingInterval
+
+    Default: 3000
+    If |g:rtagsAutoDiagnostics| is enabled, then poll for changes to the RTags
+    project with this interval and update diagnostic signs and lists if changes
+    are found.  Set to <=0 to disable polling. If disabled, updates to
+    diagnostics will be checked only after |CursorHold| and |BufEnter| events.
 
                                               *g:rtagsLog*
                                               *rtags-variable-rtags-log*
 g:rtagsLog
 
-    Default: empty
-    When set to filename, rtags will put its logs in that file.
+    Default: |tempname|
+    File to log vim-rtags output.
 
-                                              *g:rtagsAutoDiagnostics*
-                                              *rtags-variable-rtags-auto-diagnostics*
-g:rtagsAutoDiagnostics
+                                              *g:rtagsRdmLog*
+                                              *rtags-variable-rtags-rdm-log*
+g:rtagsRdmLog
 
-    Default: 1
-    If enabled then diagnostic gutter signs will be updated in the currently active
-    buffer automatically, and the diagnostic message will show in the message
-    window as the cursor moves through the file.
+    Default: |tempname|
+    If |g:rtagsAutoLaunchRdm| is enabled, then the RTags rdm daemon will log
+    its output to this file.
 
                                                                 *rtags-mappings*
 4. Mappings
@@ -222,9 +240,11 @@ g:rtagsAutoDiagnostics
                     |g:rtagsUseLocationList|). That is, all the errors and
                     warnings from rdm's clang build of the current project.
 
-                                                          *rtags-leader-rx*
-                                                            *rtags-FixIts*
-    <Leader>rx      Apply diagnostic clang fixits to the current buffer.
+                                                                *rtags-leader-rx*
+                                                                *rtags-FixIts*
+    <Leader>rx      Apply diagnostic clang fixits to the current buffer. Fixits
+                    are identified with "Fx" in the sign column, and are
+                    suffixed with "[FIXIT]" in the diagnostics lists.
 
 
                                                                 *rtags-commands*
