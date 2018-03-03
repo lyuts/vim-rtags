@@ -198,6 +198,17 @@ class Buffer(object):
             return buff
 
         # Periodically clean closed buffers
+        Buffer._clean_cache()
+
+        logger.debug("Wrapping new buffer: %s" % id_)
+        buff = Buffer(vim.buffers[id_])
+        Buffer._cache[id_] = buff
+        return buff
+
+    @staticmethod
+    def _clean_cache():
+        """ Periodically clean closed buffers
+        """
         if time() - Buffer._cache_last_cleaned > Buffer._CACHE_CLEAN_PERIOD:
             logger.debug("Cleaning invalid buffers")
             for id_old in list(Buffer._cache.keys()):
@@ -205,11 +216,6 @@ class Buffer(object):
                     logger.debug("Cleaning invalid buffer %s" % id_old)
                     del Buffer._cache[id_old]
             Buffer._cache_last_cleaned = time()
-
-        logger.debug("Wrapping new buffer: %s" % id_)
-        buff = Buffer(vim.buffers[id_])
-        Buffer._cache[id_] = buff
-        return buff
 
     @staticmethod
     def show_all_diagnostics():
