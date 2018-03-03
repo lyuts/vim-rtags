@@ -360,7 +360,7 @@ class Buffer(object):
         # Not safe to apply fixits if file is not indexed, make extra sure it is.
         if (
             self._rtags_is_reindexing() or (
-                int(vim.eval("g:rtagsAutoDiagnostics")) and
+                int(get_rtags_variable("AutoDiagnostics")) and
                 self._last_diagnostics_time < self._project.last_updated_time()
             )
         ):
