@@ -436,7 +436,7 @@ class Buffer(object):
         content = "\n".join([x for x in self._vimbuffer])
         result = run_rc_command([
             '--json', '--reindex', self._vimbuffer.name,
-            '--unsaved-file=%s:%d' % (self._vimbuffer.name, len(content))
+            '--unsaved-file', '%s:%d' % (self._vimbuffer.name, len(content))
         ], content)
         self._is_dirty = False
         logger.debug("Rtags responded to reindex request: %s" % result)
