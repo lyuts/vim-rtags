@@ -47,7 +47,7 @@ def run_rc_command(arguments, content=None):
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
         r = subprocess.run(
             cmdline,
-            input=content and content.encode("utf-8"),
+            input=content and content.encode(encoding),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -742,7 +742,7 @@ def invalid_buffer_message(filename):
 
 
 def error(msg):
-    message("""%s: see log file at" "%s" for more information""" % (msg, vim.eval('g:rtagsLog')))
+    message("""%s: see log file at "%s" for more information""" % (msg, vim.eval('g:rtagsLog')))
 
 
 def message(msg):
