@@ -128,8 +128,9 @@ def parse_completion_result(data):
 
 
 def _completion_description(completion, fields):
+    fields += ['brief_comment']
     fields = [field for field in fields if completion[field] != completion['completion']]
-    fields = ['completion'] + fields + ['brief_comment']
+    fields = ['completion'] + fields
     return " -- ".join(filter(None, [completion[field] for field in fields]))
 
 
