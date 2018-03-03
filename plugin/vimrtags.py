@@ -636,7 +636,7 @@ class Diagnostic(object):
     def to_qlist_errors(diagnostics):
         num_diagnostics = len(diagnostics)
         # Sort diagnostics into display order. Errors at top, grouped by filename in line num order.
-        diagnostics = sorted(diagnostics, key=lambda d: (d.type, d.filename, d.line_num))
+        diagnostics = sorted(diagnostics, key=lambda d: (d.type, d._filename, d.line_num))
         # Convert Diagnostic objects into quickfix compatible dicts.
         diagnostics = [d._to_qlist_dict() for d in diagnostics]
         # Add error number to diagnostic (shows in list, maybe useful for navigation?).
@@ -651,9 +651,9 @@ class Diagnostic(object):
         return height, diagnostics
 
     def __init__(self, filename, line_num, char_num, type_, text):
-        self.filename = filename
+        self._filename = filename
         self.line_num = line_num
-        self.char_num = char_num
+        self._char_num = char_num
         self.type = type_
         self.text = text
 
@@ -661,8 +661,8 @@ class Diagnostic(object):
         error_type = "W" if self.type == "warning" else "E"
         text = self.text if self.type != "fixit" else self.text + " [FIXIT]"
         return {
-            'lnum': self.line_num, 'col': self.char_num, 'text': text,
-            'filename': self.filename, 'type': error_type
+            'lnum': self.line_num, 'col': self._char_num, 'text': text,
+            'filename': self._filename, 'type': error_type
         }
 
 
@@ -724,8 +724,8 @@ class Sign(object):
             sign_ids.add(int(sign_match.group(1)))
         return sign_ids
 
-    def __init__(self, id, line_num, name, buffer_num):
-        self.id = id
+    def __init__(self, id_, line_num, name, buffer_num):
+        self.id = id_
         self._vimbuffer_num = buffer_num
         if not Sign._is_signs_defined:
             Sign._define_signs()
