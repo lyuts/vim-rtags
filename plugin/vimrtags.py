@@ -8,6 +8,8 @@ import logging
 from time import time
 
 
+print = print  # For unit tests
+
 loglevel = logging.DEBUG
 logger = logging.getLogger(__name__)
 
