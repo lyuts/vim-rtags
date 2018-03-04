@@ -92,30 +92,30 @@ class Test_parse_completion_result(VimRtagsTest):
 
     def _with_parent_sig(self, kind):
         return {
-            'menu': "mock completion -- mock parent -- mock signature -- mock comment",
+            'menu': "mock parent -- mock signature -- mock comment",
             'word': "mock completion", 'kind': kind
         }
 
     def _with_sig(self, kind):
         return {
-            'menu': "mock completion -- mock signature -- mock comment", 'word': "mock completion",
+            'menu': "mock signature -- mock comment", 'word': "mock completion",
             'kind': kind
         }
 
     def _with_parent(self, kind):
         return {
-            'menu': "mock completion -- mock parent -- mock comment", 'word': "mock completion",
+            'menu': "mock parent -- mock comment", 'word': "mock completion",
             'kind': kind
         }
 
     def _with_comment(self, kind):
         return {
-            'menu': "mock completion -- mock comment", 'word': "mock completion", 'kind': kind
+            'menu': "mock comment", 'word': "mock completion", 'kind': kind
         }
 
     def _simple(self, kind):
         return {
-            'menu': "mock completion", 'word': "mock completion", 'kind': kind
+            'menu': "", 'word': "mock completion", 'kind': kind
         }
 
 
