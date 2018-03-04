@@ -1,15 +1,18 @@
 import json
 import logging
 import sys
-from unittest import TestCase
-from unittest.mock import Mock, MagicMock, patch, call
+try:
+    from unittest import TestCase
+    from unittest.mock import Mock, MagicMock, patch, call
+except ImportError:
+    from unittest2 import TestCase
+    from mock import Mock, MagicMock, patch, call
 
-from nose.tools import set_trace
+#from nose.tools import set_trace
 
 # Create a mocked vim in the environment.
 vim = MagicMock()
 sys.modules["vim"] = vim
-
 with patch.object(logging, "FileHandler"):
     from plugin import vimrtags
 
@@ -244,14 +247,14 @@ class Test_Buffer_show_all_diagnostics(VimRtagsTest):
     def test_rc_fails(self, error, run_rc_command):
         run_rc_command.return_value = None
         vimrtags.Buffer.show_all_diagnostics()
-        error.assert_called()
+        self.assertTrue(error.called)
         self.assertFalse(vim.command.called)
 
     @patch("plugin.vimrtags.message", autospec=True)
     def test_no_diagnostics(self, message, run_rc_command):
         run_rc_command.return_value = '{"checkStyle": {}}'
         vimrtags.Buffer.show_all_diagnostics()
-        message.assert_called()
+        self.assertTrue(message.called)
         self.assertFalse(vim.command.called)
 
     def prepare(self, get_rtags_variable, Diagnostic, run_rc_command):
@@ -922,10 +925,10 @@ class Test_Buffer__update_loclist(BufferInstanceTest):
 class Test_Buffer__place_signs(BufferInstanceTest):
 
     def test(self, _place_sign, _reset_signs, Sign):
-        self.buffer._diagnostics = {
-            3: Mock(spec=vimrtags.Diagnostic, line_num=4, type="a"),
-            56: Mock(spec=vimrtags.Diagnostic, line_num=65, type="b")
-        }
+        self.buffer._diagnostics = MagicMock(values=Mock(return_value=[
+            Mock(spec=vimrtags.Diagnostic, line_num=4, type="a"),
+            Mock(spec=vimrtags.Diagnostic, line_num=65, type="b")
+        ]))
         calls = MagicMock()
         calls.attach_mock(_reset_signs, "reset")
         calls.attach_mock(_place_sign, "place")
