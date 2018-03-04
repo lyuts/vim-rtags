@@ -922,7 +922,9 @@ function! rtags#NotifyCursorMoved()
 endfunction
 
 function! rtags#Poll(timer)
-    call s:Pyeval("vimrtags.Buffer.current().on_poll()")
+    if &filetype == "cpp" || &filetype == "c"
+        call s:Pyeval("vimrtags.Buffer.current().on_poll()")
+    endif
     call timer_start(g:rtagsDiagnosticsPollingInterval, "rtags#Poll")
 endfunction
 
