@@ -1104,7 +1104,7 @@ endfunction
 
 " Prefer omnifunc, if enabled.
 if g:rtagsCppOmnifunc == 1
-    autocmd Filetype cpp setlocal omnifunc=RtagsCompleteFunc
+    autocmd Filetype cpp,c setlocal omnifunc=RtagsCompleteFunc
 " Override completefunc if it's available to be used.
 elseif &completefunc == ""
     set completefunc=RtagsCompleteFunc
