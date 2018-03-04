@@ -230,7 +230,7 @@ g:rtagsRdmLog
                                                             *rtags-leader-rd*
                                                             *rtags-Diagnostics*
     <Leader>rd      Show diagnostics for the current buffer in the location list,
-                    along withing diagnostic signs in the current window's
+                    along with diagnostic signs in the current window's
                     gutter.
 
                                                             *rtags-leader-rD*
@@ -257,6 +257,14 @@ g:rtagsRdmLog
         - RtagsIFindSymbols
         - RtagsIFindRefsByName
         - RtagsLoadCompilationDb
+
+                                                              *RtagsResetCaches*
+
+    RtagsResetCaches
+
+    Reset the buffer and RTags project cache.  This may be needed if you create
+    or modify the RTags project during a vim session.
+
 
                                                             *rtags-integrations*
 6. Integrations with other plugins

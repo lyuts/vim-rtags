@@ -166,6 +166,13 @@ def send_completion_request():
     assert False
 
 
+def reset_caches():
+    Buffer.reset()
+    Project.reset()
+    Sign.reset()
+    message("RTags caches have been reset")
+
+
 class Buffer(object):
     _cache = {}
     _cache_last_cleaned = time()
@@ -200,7 +207,7 @@ class Buffer(object):
             return buff
 
         # Periodically clean closed buffers
-        Buffer._clean_cache()
+        Buffer._clean_cache_periodically()
 
         logger.debug("Wrapping new buffer: %s" % id_)
         buff = Buffer(vim.buffers[id_])
@@ -208,16 +215,33 @@ class Buffer(object):
         return buff
 
     @staticmethod
-    def _clean_cache():
+    def reset():
+        """ Clear the Buffer cache.
+
+            Remove all signs in still-valid buffers, then empty the cache.
+        """
+        Buffer._clean_cache()
+        for buffer in Buffer._cache.values():
+            buffer._reset_signs()
+        Buffer._cache = {}
+
+    @staticmethod
+    def _clean_cache_periodically():
         """ Periodically clean closed buffers
         """
         if time() - Buffer._cache_last_cleaned > Buffer._CACHE_CLEAN_PERIOD:
-            logger.debug("Cleaning invalid buffers")
-            for id_old in list(Buffer._cache.keys()):
-                if not Buffer._cache[id_old]._vimbuffer.valid:
-                    logger.debug("Cleaning invalid buffer %s" % id_old)
-                    del Buffer._cache[id_old]
-            Buffer._cache_last_cleaned = time()
+            Buffer._clean_cache()
+
+    @staticmethod
+    def _clean_cache():
+        """ Clean closed buffers
+        """
+        logger.debug("Cleaning invalid buffers")
+        for id_old in list(Buffer._cache.keys()):
+            if not Buffer._cache[id_old]._vimbuffer.valid:
+                logger.debug("Cleaning invalid buffer %s" % id_old)
+                del Buffer._cache[id_old]
+        Buffer._cache_last_cleaned = time()
 
     @staticmethod
     def show_all_diagnostics():
@@ -600,6 +624,11 @@ class Project(object):
         Project._cache[project_root] = project
         return project
 
+    @staticmethod
+    def reset():
+        Project._rtags_data_dir = None
+        Project._cache = {}
+
     def __init__(self, project_root):
         self._project_root = project_root
         # Calculate the path of project database in the RTags data directory.
@@ -715,6 +744,10 @@ class Sign(object):
         vim.command("sign define rtags_warning text=W texthl=rtags_warning")
         vim.command("sign define rtags_error text=E texthl=rtags_error")
         Sign._is_signs_defined = True
+
+    @staticmethod
+    def reset():
+        Sign._is_signs_defined = False
 
     @staticmethod
     def used_ids(buffer_num):

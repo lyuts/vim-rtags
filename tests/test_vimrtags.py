@@ -116,6 +116,20 @@ class Test_parse_completion_result(VimRtagsTest):
         }
 
 
+@patch("plugin.vimrtags.Buffer", autospec=True)
+@patch("plugin.vimrtags.Project", autospec=True)
+@patch("plugin.vimrtags.Sign", autospec=True)
+@patch("plugin.vimrtags.message", autospec=True)
+class Test_reset_caches(VimRtagsTest):
+    def test(self, message, Sign, Project, Buffer):
+        vimrtags.reset_caches()
+
+        Buffer.reset.assert_called_once_with()
+        Project.reset.assert_called_once_with()
+        Sign.reset.assert_called_once_with()
+        self.assertTrue(message.called)
+
+
 class Test_Buffer_find(VimRtagsTest):
     def setUp(self):
         super(Test_Buffer_find, self).setUp()
@@ -148,8 +162,8 @@ class Test_Buffer_get(VimRtagsTest):
         self.assertIs(buffer, cached_buffer)
 
     @patch("plugin.vimrtags.Project", MagicMock())
-    @patch("plugin.vimrtags.Buffer._clean_cache")
-    def test_not_found(self, _clean_cache):
+    @patch("plugin.vimrtags.Buffer._clean_cache_periodically")
+    def test_not_found(self, _clean_cache_periodically):
         vimbuffer = Mock()
         vim.buffers.append(vimbuffer)
         other_buffer = Mock()
@@ -158,19 +172,41 @@ class Test_Buffer_get(VimRtagsTest):
         buffer = vimrtags.Buffer.get(3)
         buffer_again = vimrtags.Buffer.get(3)
 
-        _clean_cache.assert_called_once_with()
+        _clean_cache_periodically.assert_called_once_with()
         self.assertIsInstance(buffer, vimrtags.Buffer)
         self.assertIs(buffer._vimbuffer, vimbuffer)
         self.assertDictEqual(vimrtags.Buffer._cache, {3: buffer, 4: other_buffer})
         self.assertIs(buffer, buffer_again)
 
 
+@patch("plugin.vimrtags.Buffer._cache", None)
+@patch("plugin.vimrtags.Buffer._clean_cache")
+class Test_Buffer_reset(VimRtagsTest):
+    def test(self, _clean_cache):
+        buffer1 = Mock(spec=vimrtags.Buffer)
+        buffer2 = Mock(spec=vimrtags.Buffer)
+        vimrtags.Buffer._cache = {2: buffer1, 7: buffer2}
+        calls = MagicMock()
+        calls.attach_mock(_clean_cache, "clean")
+        calls.attach_mock(buffer1._reset_signs, "reset1")
+        calls.attach_mock(buffer2._reset_signs, "reset2")
+
+        vimrtags.Buffer.reset()
+
+        self.assertListEqual(
+            calls.method_calls, [
+                call.clean(), call.reset1(), call.reset2()
+            ]
+        )
+        self.assertDictEqual(vimrtags.Buffer._cache, {})
+
+
 @patch("plugin.vimrtags.logger", Mock(spec=logging.Logger))
 @patch("plugin.vimrtags.time", autospec=True)
-@patch("plugin.vimrtags.Buffer._cache", {})
+@patch("plugin.vimrtags.Buffer._cache", None)
 @patch("plugin.vimrtags.Buffer._cache_last_cleaned", 6)
 @patch("plugin.vimrtags.Buffer._CACHE_CLEAN_PERIOD", 4)
-class Test_Buffer__clean_cache(VimRtagsTest):
+class Test_Buffer__clean_cache_periodically(VimRtagsTest):
     def prepare(self):
         self.buffer = Mock(_vimbuffer=Mock(valid=False))
         vimrtags.Buffer._cache = {3: self.buffer}
@@ -178,14 +214,27 @@ class Test_Buffer__clean_cache(VimRtagsTest):
     def test_throttled(self, time):
         self.prepare()
         time.return_value = 10
-        vimrtags.Buffer._clean_cache()
+        vimrtags.Buffer._clean_cache_periodically()
         self.assertIs(vimrtags.Buffer._cache[3], self.buffer)
 
     def test_removes(self, time):
         self.prepare()
         time.return_value = 11
-        vimrtags.Buffer._clean_cache()
+        vimrtags.Buffer._clean_cache_periodically()
         self.assertDictEqual(vimrtags.Buffer._cache, {})
+
+
+@patch("plugin.vimrtags.logger", Mock(spec=logging.Logger))
+@patch("plugin.vimrtags.Buffer._cache", None)
+class Test_Buffer__clean_cache(VimRtagsTest):
+    def test(self):
+        valid_buffer = Mock(_vimbuffer=Mock(valid=True))
+        invalid_buffer = Mock(_vimbuffer=Mock(valid=False))
+        vimrtags.Buffer._cache = {3: valid_buffer, 5: invalid_buffer}
+
+        vimrtags.Buffer._clean_cache()
+
+        self.assertDictEqual(vimrtags.Buffer._cache, {3: valid_buffer})
 
 
 @patch("plugin.vimrtags.run_rc_command", autospec=True)
@@ -1012,6 +1061,16 @@ other junk
         )
 
 
+@patch("plugin.vimrtags.Project._rtags_data_dir", "/data/dir")
+@patch("plugin.vimrtags.Project._cache", {"some": "stuff"})
+class Test_Project_reset(VimRtagsTest):
+    def test(self):
+        vimrtags.Project.reset()
+
+        self.assertIsNone(vimrtags.Project._rtags_data_dir)
+        self.assertDictEqual(vimrtags.Project._cache, {})
+
+
 @patch("plugin.vimrtags.logger", Mock(spec=logging.Logger))
 @patch("plugin.vimrtags.Project._rtags_data_dir", "/data/dir")
 class Test_Project_init(VimRtagsTest):
@@ -1184,6 +1243,14 @@ class Test_Sign__define_signs(VimRtagsTest):
             call("sign define rtags_warning text=W texthl=rtags_warning"),
             call("sign define rtags_error text=E texthl=rtags_error")
         ])
+
+
+@patch("plugin.vimrtags.Sign._is_signs_defined", True)
+class Test_Sign_reset(VimRtagsTest):
+    def test(self):
+        vimrtags.Sign.reset()
+
+        self.assertFalse(vimrtags.Sign._is_signs_defined)
 
 
 @patch("plugin.vimrtags.get_command_output", autospec=True)

@@ -1133,6 +1133,9 @@ command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilatio
 " The most commonly used find operation
 command! -nargs=1 -complete=customlist,rtags#CompleteSymbols Rtag RtagsIFindSymbols <q-args>
 
+" Reset all Python caches - maybe useful if the RTags project has been messed with
+" after the vim session has started.
+command! RtagsResetCaches call s:Pyeval('vimrtags.reset_caches()')
 
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
