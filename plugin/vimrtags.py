@@ -237,10 +237,9 @@ class Buffer(object):
     def _clean_cache():
         """ Clean closed buffers
         """
-        logger.debug("Cleaning invalid buffers")
         for id_old in list(Buffer._cache.keys()):
             if not Buffer._cache[id_old]._vimbuffer.valid:
-                logger.debug("Cleaning invalid buffer %s" % id_old)
+                logger.debug("Cleaning invalid buffer: %s" % id_old)
                 del Buffer._cache[id_old]
         Buffer._cache_last_cleaned = time()
 
