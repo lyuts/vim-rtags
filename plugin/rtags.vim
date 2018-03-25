@@ -670,7 +670,7 @@ function! rtags#ExecuteRCAsync(args, handlers)
     let s:job_cid = s:job_cid + 1
     " should have out+err redirection portable for various shells.
     if has('nvim')
-        let cmd = cmd . '>& ' . rtags#TempFile(s:job_cid)
+        let cmd = cmd . ' >' . rtags#TempFile(s:job_cid) . ' 2>&1'
         let job = jobstart(cmd, s:callbacks)
         let s:jobs[job] = s:job_cid
         let s:result_handlers[job] = a:handlers
