@@ -341,17 +341,16 @@ endfunction
 "
 function! s:ExpandReferences() " <<<
     let ln = line(".")
-    let l = getline(ln)
 
     " Detect expandable region
-    let nr = matchlist(l, '#\([0-9]\+\)$')[1]
-    if !empty(b:rtagsLocations[nr].source)
-        let location = b:rtagsLocations[nr].source
-        let b:rtagsLocations[nr].source = ''
+    if !empty(b:rtagsLocations[ln - 1].source)
+        let location = b:rtagsLocations[ln - 1].source
+        let rnum = b:rtagsLocations[ln - 1].rnum
+        let b:rtagsLocations[ln - 1].source = ''
         let args = {
                 \ '--containing-function-location' : '',
                 \ '-r' : location }
-        call rtags#ExecuteThen(args, [[function('rtags#AddReferences'), nr]])
+        call rtags#ExecuteThen(args, [[function('rtags#AddReferences'), rnum]])
     endif
 endfunction " >>>
 
@@ -360,14 +359,12 @@ endfunction " >>>
 "
 function! s:OpenReference() " <<<
     let ln = line(".")
-    let l = getline(ln)
 
     " Detect openable region
-    let nr = matchlist(l, '#\([0-9]\+\)$')[1]
-    if !empty(nr)
-        let jump_file = b:rtagsLocations[nr].filename
-        let lnum = b:rtagsLocations[nr].lnum
-        let col = b:rtagsLocations[nr].col
+    if ln - 1 < len(b:rtagsLocations)
+        let jump_file = b:rtagsLocations[ln - 1].filename
+        let lnum = b:rtagsLocations[ln - 1].lnum
+        let col = b:rtagsLocations[ln - 1].col
         wincmd j
         " Add location to the jumplist
         normal m'
@@ -382,18 +379,31 @@ endfunction " >>>
 " viewer window.
 "
 " param[in] results - List of locations, one per line
-" param[in] i - The index of the reference the added references are calling or -1
+" param[in] rnum - The record number the references are calling or -1
 "
 " Format of each line: <path>,<line>\s<text>\sfunction: <caller path>
-function! rtags#AddReferences(results, i)
+function! rtags#AddReferences(results, rnum)
     let ln = line(".")
-    let nr = len(b:rtagsLocations)
     let depth = 0
-    if a:i >= 0
-        let depth = b:rtagsLocations[a:i].depth + 1
-        silent execute "normal! gg/#".a:i."$\<cr>"
+    let nr = len(b:rtagsLocations)
+    let i = -1
+    " If a reference number is provided, find this entry in the list and insert
+    " after it.
+    if a:rnum >= 0
+        let i = 0
+        while i < nr && b:rtagsLocations[i].rnum != a:rnum
+            let i += 1
+        endwhile
+        if i == nr
+            " We didn't find the source record, something went wrong
+            echo "Error finding insertion point."
+            return
+        endif
+        let depth = b:rtagsLocations[i].depth + 1
+        exec (":" . (i + 1))
     endif
     let prefix = repeat(" ", depth * 2)
+    let new_entries = []
     setlocal modifiable
     for record in a:results
         let [line; sourcefunc] = split(record, '\s\+function: ')
@@ -409,12 +419,12 @@ function! rtags#AddReferences(results, i)
         let entry.type = 'ref'
         let entry.depth = depth
         let entry.source = matchstr(sourcefunc, '[^\s]\+')
-        " TODO Hide the index number of the entry - this is an implementation
-        " detail that shouldn't be visible to the user.
-        silent execute "normal! A\<cr>\<esc>i".prefix . substitute(entry.filename, '.*/', '', 'g').':'.entry.lnum.' '.entry.text.' #'.nr."\<esc>"
-        call add(b:rtagsLocations, entry)
+        let entry.rnum = nr
+        silent execute "normal! A\<cr>\<esc>i".prefix . substitute(entry.filename, '.*/', '', 'g').':'.entry.lnum.' '.entry.text."\<esc>"
+        call add(new_entries, entry)
         let nr = nr + 1
     endfor
+    call extend(b:rtagsLocations, new_entries, i + 1)
     setlocal nomodifiable
     exec (":" . ln)
 endfunction
