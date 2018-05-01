@@ -116,7 +116,7 @@ Such config provides automatic calls, of omnicompletion on c and cpp entity acce
 
 ### Current limitations
 * There is no support for overridden functions and methods
-* Thre is no support for function argument completion
+* There is no support for function argument completion
 
 # Notes
 1. This plugin is wip.
