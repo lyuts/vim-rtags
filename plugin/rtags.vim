@@ -1152,7 +1152,9 @@ command! RtagsResetCaches call s:Pyeval('vimrtags.reset_caches()')
 if g:rtagsAutoLaunchRdm
     call system(g:rtagsRcCmd." -w")
     if v:shell_error != 0
-        call system(g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".rtagsRdmLog)
+        let s:cmd = g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".g:rtagsRdmLog
+        call rtags#Log("Starting RDM: ".s:cmd)
+        call system(s:cmd)
     end
 end
 
