@@ -247,6 +247,10 @@ class Buffer(object):
         """ Get all diagnostics for all files and show in quickfix list.
         """
         # Get the diagnostics from rtags.
+        content = run_rc_command([
+            '--diagnose-all', '--current-file', vim.current.buffer.name,
+            '--synchronous-diagnostics', '--json'
+        ])
         content = run_rc_command(['--diagnose-all',  '--synchronous-diagnostics', '--json'])
         if content is None:
             return error('Failed to get diagnostics')
