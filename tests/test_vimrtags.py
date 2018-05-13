@@ -1081,20 +1081,42 @@ class Test_Project_init(VimRtagsTest):
         project = vimrtags.Project("/project/root/")
 
         self.assertEqual(project._project_root, "/project/root/")
-        self.assertEqual(project._db_path, "/data/dir/_project_root_/project")
+        self.assertEqual(project._db_path, "/data/dir/_project_root_")
 
 
 @patch("plugin.vimrtags.logger", Mock(spec=logging.Logger))
 @patch("plugin.vimrtags.Project._rtags_data_dir", "/data/dir")
 @patch("plugin.vimrtags.os.path.getmtime", autospec=True)
+@patch("plugin.vimrtags.os.listdir", autospec=True)
 class Test_Project_last_updated_time(VimRtagsTest):
-    def test(self, getmtime):
+    def test_ok(self, listdir, getmtime):
+        # setup
+        listdir.return_value = ["file1", "file2", "file3"]
+        getmtime.side_effect = [1, 3, 2]
+        project = vimrtags.Project("/file/path/")
+
+        # action
+        mtime = project.last_updated_time()
+
+        # confirm
+        listdir.assert_called_once_with("/data/dir/_file_path_")
+        self.assertListEqual(
+            getmtime.call_args_list, [
+                call("/data/dir/_file_path_/file1"), call("/data/dir/_file_path_/file2"),
+                call("/data/dir/_file_path_/file3")
+            ]
+        )
+        self.assertEqual(mtime, 3)
+
+    @patch("plugin.vimrtags.reset_caches", autospec=True)
+    def test_ioerror(self, reset_caches, listdir, getmtime):
+        listdir.side_effect = IOError("Boom")
         project = vimrtags.Project("/file/path/")
 
         mtime = project.last_updated_time()
 
-        getmtime.assert_called_once_with("/data/dir/_file_path_/project")
-        self.assertIs(mtime, getmtime.return_value)
+        reset_caches.assert_called_once_with()
+        self.assertEqual(mtime, 0)
 
 
 class Test_Diagnostic_from_rtags_errors(VimRtagsTest):

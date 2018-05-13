@@ -636,14 +636,25 @@ class Project(object):
         self._project_root = project_root
         # Calculate the path of project database in the RTags data directory.
         self._db_path = os.path.join(
-            Project._rtags_data_dir, project_root.replace("/", "_"), "project"
+            Project._rtags_data_dir, project_root.replace("/", "_")  # , "project"
         )
         logger.debug("Project %s db path set to %s" % (self._project_root, self._db_path))
 
     def last_updated_time(self):
         """ Unix timestamp when the rtags database was last updated.
         """
-        return os.path.getmtime(self._db_path)
+        try:
+            return max((
+                os.path.getmtime(os.path.join(self._db_path, f)) for f in os.listdir(self._db_path)
+            ))
+        except IOError as e:
+            logger.warning(
+                "Failed to get modification time of '%s', so resetting caches: %s"
+                % (self._db_path, e)
+            )
+            # Project was deleted, reset everything!
+            reset_caches()
+            return 0
 
 
 class Diagnostic(object):
