@@ -847,7 +847,8 @@ function! rtags#ProjectListHandler(output)
     endfor
     let choice = input('Choice: ')
     if choice > 0 && choice <= len(projects)
-        call rtags#ProjectOpen(projects[choice-1])
+        let project = substitute(projects[choice-1], '\s\+<=$', '', '')
+        call rtags#ProjectOpen(project)
     endif
 endfunction
 
