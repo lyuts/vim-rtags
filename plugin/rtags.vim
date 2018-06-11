@@ -852,19 +852,20 @@ function! rtags#ProjectListHandler(output)
 endfunction
 
 function! rtags#ProjectList()
-    call rtags#ExecuteThen({ '-w' : '' }, [function('rtags#ProjectListHandler')])
+    let result = rtags#ExecuteRC({ '-w' : '' })
+    call rtags#ExecuteHandlers(result, [function('rtags#ProjectListHandler')])
 endfunction
 
 function! rtags#ProjectOpen(pattern)
-    call rtags#ExecuteThen({ '-w' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-w' : a:pattern })
 endfunction
 
 function! rtags#LoadCompilationDb(pattern)
-    call rtags#ExecuteThen({ '-J' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-J' : a:pattern })
 endfunction
 
 function! rtags#ProjectClose(pattern)
-    call rtags#ExecuteThen({ '-u' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-u' : a:pattern })
 endfunction
 
 function! rtags#PreprocessFileHandler(result)
