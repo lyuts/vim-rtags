@@ -443,12 +443,9 @@ function! rtags#getCurrentLocation()
     return printf("%s:%s:%s", expand("%:p"), lnum, col)
 endfunction
 
-function! rtags#SymbolInfoHandler(output)
-    echo join(a:output, "\n")
-endfunction
-
 function! rtags#SymbolInfo()
-    call rtags#ExecuteThen({ '-U' : rtags#getCurrentLocation() }, [function('rtags#SymbolInfoHandler')])
+    let result = rtags#ExecuteRC({ '-U' : rtags#getCurrentLocation() })
+    echo join(result, "\n")
 endfunction
 
 function! rtags#cloneCurrentBuffer(type)
