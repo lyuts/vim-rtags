@@ -78,6 +78,7 @@ It is possible to set its maximum size (number of entries), default is 100:
 | &lt;Leader&gt;rv | -k -r                            | Find virtuals                              |
 | &lt;Leader&gt;rd | --diagnose                       | Diagnose file for warnings and errors      |
 | &lt;Leader&gt;rb | N/A                              | Jump to previous location                  |
+| &lt;Leader&gt;ro | --kind-filter -i -F              | Find method in current file                | 
 
 ## Unite sources
 
