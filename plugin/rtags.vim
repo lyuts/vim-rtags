@@ -27,6 +27,14 @@ if !exists("g:rtagsRdmCmd")
     let g:rtagsRdmCmd = "rdm"
 endif
 
+if !exists("g:rtagsLog")
+    let g:rtagsLog = tempname()
+endif
+
+if !exists("g:rtagsRdmLog")
+    let g:rtagsRdmLog = tempname()
+endif
+
 if !exists("g:rtagsAutoLaunchRdm")
     let g:rtagsAutoLaunchRdm = 0
 endif
@@ -57,12 +65,18 @@ if !exists("g:rtagsMaxSearchResultWindowHeight")
     let g:rtagsMaxSearchResultWindowHeight = 10
 endif
 
-if g:rtagsAutoLaunchRdm
-    call system(g:rtagsRcCmd." -w")
-    if v:shell_error != 0 
-        call system(g:rtagsRdmCmd." --daemon > /dev/null")
-    end
-end
+if !exists("g:rtagsAutoDiagnostics")
+    let g:rtagsAutoDiagnostics = 1
+endif
+
+if !exists("g:rtagsDiagnosticsPollingInterval")
+    let g:rtagsDiagnosticsPollingInterval = 3000
+endif
+
+if !exists("g:rtagsCppOmnifunc")
+    let g:rtagsCppOmnifunc = 1
+endif
+
 
 let g:SAME_WINDOW = 'same_window'
 let g:H_SPLIT = 'hsplit'
@@ -97,6 +111,8 @@ if g:rtagsUseDefaultMappings == 1
     noremap <Leader>rC :call rtags#FindSuperClasses()<CR>
     noremap <Leader>rc :call rtags#FindSubClasses()<CR>
     noremap <Leader>rd :call rtags#Diagnostics()<CR>
+    noremap <Leader>rD :call rtags#DiagnosticsAll()<CR>
+    noremap <Leader>rx :call rtags#ApplyFixit()<CR>
 endif
 
 let s:script_folder_path = escape( expand( '<sfile>:p:h' ), '\' )
@@ -111,15 +127,11 @@ function! rtags#InitPython()
     exe g:rtagsPy." ".s:pyInitScript
 endfunction
 
-call rtags#InitPython()
-
 """
 " Logging routine
 """
 function! rtags#Log(message)
-    if exists("g:rtagsLog")
-        call writefile([string(a:message)], g:rtagsLog, "a")
-    endif
+    call writefile([strftime("%Y-%m-%d %H:%M:%S", localtime()) . " | vim | " . string(a:message)], g:rtagsLog, "a")
 endfunction
 
 "
@@ -539,10 +551,14 @@ function! rtags#JumpToHandler(results, args)
     if len(results) >= 0 && open_opt != g:SAME_WINDOW
         call rtags#cloneCurrentBuffer(open_opt)
     endif
-
+    call rtags#Log("JumpTo results with ".json_encode(a:args).": ".json_encode(results))
     if len(results) > 1
         call rtags#DisplayResults(results)
     elseif len(results) == 1
+        if results[0] == "Not indexed"
+            echom "Failed to jump - file is not indexed"
+            return
+        endif
         let [location; symbol_detail] = split(results[0], '\s\+')
         let [jump_file, lnum, col; rest] = split(location, ':')
 
@@ -551,6 +567,8 @@ function! rtags#JumpToHandler(results, args)
         if rtags#jumpToLocation(jump_file, lnum, col)
             normal! zz
         endif
+    else
+        echom "Failed to jump - cannot follow symbol"
     endif
 
 endfunction
@@ -596,7 +614,7 @@ function! rtags#saveLocation()
 endfunction
 
 function! rtags#pushToStack(location)
-    let jumpListLen = len(g:rtagsJumpStack) 
+    let jumpListLen = len(g:rtagsJumpStack)
     if jumpListLen > g:rtagsJumpStackMaxSize
         call remove(g:rtagsJumpStack, 0)
     endif
@@ -789,7 +807,7 @@ function! rtags#ExecuteHandlers(output, handlers)
                 return
             endtry
         endif
-    endfor 
+    endfor
 endfunction
 
 function! rtags#ExecuteThen(args, handlers)
@@ -944,53 +962,47 @@ function! rtags#FindSymbolsOfWordUnderCursor()
 endfunction
 
 function! rtags#Diagnostics()
-    let s:file = expand("%:p")
-    return s:Pyeval("vimrtags.get_diagnostics()")
+    return s:Pyeval("vimrtags.Buffer.current().show_diagnostics_list()")
 endfunction
 
-"
-" This function assumes it is invoked from insert mode
-"
-function! rtags#CompleteAtCursor(wordStart, base)
-    let flags = "--synchronous-completions -l"
-    let file = expand("%:p")
-    let pos = getpos('.')
-    let line = pos[1] 
-    let col = pos[2]
+function! rtags#DiagnosticsAll()
+    return s:Pyeval("vimrtags.Buffer.show_all_diagnostics()")
+endfunction
 
-    if index(['.', '::', '->'], a:base) != -1
-        let col += 1
+function! rtags#ApplyFixit()
+    return s:Pyeval("vimrtags.Buffer.current().apply_fixits()")
+endfunction
+
+function! rtags#NotifyEdit()
+    return s:Pyeval("vimrtags.Buffer.current().on_edit()")
+endfunction
+
+function! rtags#NotifyWrite()
+    return s:Pyeval("vimrtags.Buffer.current().on_write()")
+endfunction
+
+function! rtags#NotifyIdle()
+    return s:Pyeval("vimrtags.Buffer.current().on_idle()")
+endfunction
+
+function! rtags#NotifyCursorMoved()
+    return s:Pyeval("vimrtags.Buffer.current().on_cursor_moved()")
+endfunction
+
+function! rtags#Poll(timer)
+    if &filetype == "cpp" || &filetype == "c"
+        call s:Pyeval("vimrtags.Buffer.current().on_poll()")
     endif
+    call timer_start(g:rtagsDiagnosticsPollingInterval, "rtags#Poll")
+endfunction
 
-    let rcRealCmd = rtags#getRcCmd()
-
-    exec "normal! \<Esc>"
-    let stdin_lines = join(getline(1, "$"), "\n").a:base
-    let offset = len(stdin_lines)
-
-    exec "startinsert!"
-    "    echomsg getline(line)
-    "    sleep 1
-    "    echomsg "DURING INVOCATION POS: ".pos[2]
-    "    sleep 1
-    "    echomsg stdin_lines
-    "    sleep 1
-    " sed command to remove CDATA prefix and closing xml tag from rtags output
-    let sed_cmd = "sed -e 's/.*CDATA\\[//g' | sed -e 's/.*\\/completions.*//g'"
-    let cmd = printf("%s %s %s:%s:%s --unsaved-file=%s:%s | %s", rcRealCmd, flags, file, line, col, file, offset, sed_cmd)
-    call rtags#Log("Command line:".cmd)
-
-    let result = split(system(cmd, stdin_lines), '\n\+')
-    "    echomsg "Got ".len(result)." completions"
-    "    sleep 1
-    call rtags#Log("-----------")
-    "call rtags#Log(result)
-    call rtags#Log("-----------")
-    return result
-    "    for r in result
-    "        echo r
-    "    endfor
-    "    call rtags#DisplayResults(result)
+" Generic function to get output of a command.
+" Used in python for things that can't be read directly via vim.eval(...)
+function! rtags#getCommandOutput(cmd_txt) abort
+  redir => output
+    silent execute a:cmd_txt
+  redir END
+  return output
 endfunction
 
 function! s:Pyeval( eval_string )
@@ -1000,7 +1012,7 @@ function! s:Pyeval( eval_string )
       return pyeval( a:eval_string )
   endif
 endfunction
-    
+
 function! s:RcExecuteJobCompletion()
     call rtags#SetJobStateFinish()
     if ! empty(b:rtags_state['stdout']) && mode() == 'i'
@@ -1130,7 +1142,7 @@ endf
 "     - invoke completion through rc
 "     - filter out options that start with meth (in this case).
 "     - show completion options
-" 
+"
 "     Reason: rtags returns all options regardless of already type method name
 "     portion
 """
@@ -1160,7 +1172,11 @@ function! s:RtagsCompleteFunc(findstart, base, async)
     endif
 endfunction
 
-if &completefunc == ""
+" Prefer omnifunc, if enabled.
+if g:rtagsCppOmnifunc == 1
+    autocmd Filetype cpp,c setlocal omnifunc=RtagsCompleteFunc
+" Override completefunc if it's available to be used.
+elseif &completefunc == ""
     set completefunc=RtagsCompleteFunc
 endif
 
@@ -1186,4 +1202,36 @@ command! -nargs=1 -complete=dir RtagsLoadCompilationDb call rtags#LoadCompilatio
 
 " The most commonly used find operation
 command! -nargs=1 -complete=customlist,rtags#CompleteSymbols Rtag RtagsIFindSymbols <q-args>
+
+" Reset all Python caches - maybe useful if the RTags project has been messed with
+" after the vim session has started.
+command! RtagsResetCaches call s:Pyeval('vimrtags.reset_caches()')
+
+if g:rtagsAutoLaunchRdm
+    call system(g:rtagsRcCmd." -w")
+    if v:shell_error != 0
+        let s:cmd = g:rtagsRdmCmd." --daemon  --log-timestamp --log-flush --log-file ".g:rtagsRdmLog
+        call rtags#Log("Starting RDM: ".s:cmd)
+        call system(s:cmd)
+    end
+end
+
+
+call rtags#InitPython()
+
+
+if g:rtagsAutoDiagnostics == 1
+    augroup rtags_auto_diagnostics
+        autocmd!
+        autocmd BufWritePost *.cpp,*.c,*.hpp,*.h call rtags#NotifyWrite()
+        autocmd TextChanged,TextChangedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyEdit()
+        autocmd CursorHold,CursorHoldI,BufEnter *.cpp,*.c,*.hpp,*.h call rtags#NotifyIdle()
+        autocmd CursorMoved,CursorMovedI *.cpp,*.c,*.hpp,*.h call rtags#NotifyCursorMoved()
+    augroup END
+
+    if g:rtagsDiagnosticsPollingInterval > 0
+        call rtags#Log("Starting async update checking")
+        call rtags#Poll(0)
+    endif
+endif
 

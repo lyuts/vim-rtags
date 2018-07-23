@@ -42,6 +42,11 @@ default mappings can be disabled:
 
     let g:rtagsUseDefaultMappings = 0
 
+Diagnostics will be retrieved from rtags automatically and displayed as signs in the gutter column.
+To disable this behaviour, set:
+
+    let g:rtagsAutoDiagnostics = 0
+
 By default, search results are showed in a location list. Location lists
 are local to the current window. To use the vim QuickFix window, which is
 shared between all windows, set:
@@ -77,6 +82,8 @@ It is possible to set its maximum size (number of entries), default is 100:
 | &lt;Leader&gt;rw | -e -r --rename                   | Rename symbol under cursor                 |
 | &lt;Leader&gt;rv | -k -r                            | Find virtuals                              |
 | &lt;Leader&gt;rd | --diagnose                       | Diagnose file for warnings and errors      |
+| &lt;Leader&gt;rD | --diagnose-all                   | Diagnose all files in project              |
+| &lt;Leader&gt;rx | --fixits                         | Apply diagnostic fixits to current buffer  |
 | &lt;Leader&gt;rb | N/A                              | Jump to previous location                  |
 
 ## Unite sources
@@ -88,15 +95,17 @@ This plugin defines three Unite sources:
 * `rtags/project` - list/switch projects.
 
 ## Code completion
-Code completion functionality uses ```completefunc``` (i.e. CTRL-X CTRL-U). If ```completefunc```
-is set, vim-rtags will not override it with ```RtagsCompleteFunc```. This functionality is still
-unstable, but if you want to try it you will have to set ```completefunc``` by
+The ```omnifunc``` (i.e. CTRL-X CTRL-O) is overridden with ```RtagsCompleteFunc``` for cpp
+filetypes by default. This can be toggled using ```let g:rtagsCppOmnifunc = 0```.
+If ```g:rtagsCppOmnifunc``` is set to ```0``` then the  ```completefunc``` (i.e. CTRL-X CTRL-U)
+will be set instead, but only if it's not already used.
 
-    set completefunc=RtagsCompleteFunc
+Compatibility with [YouCompleteMe](https://valloric.github.io/YouCompleteMe/) is just a matter of
+disabling their built-in cpp completions and allowing vim-rtags to take over via their fallback to
+the ```omnifunc```.
 
-Also ```RtagsCompleteFunc``` can be used as omnifunc. For example, you can use
-such approach with [neocomplete](https://github.com/Shougo/neocomplete.vim)(for more details read it's docs):
-
+Compatibility with [neocomplete](https://github.com/Shougo/neocomplete.vim) can be achieved with
+(for more details read it's docs):
 ```
 function! SetupNeocompleteForCppWithRtags()
     " Enable heavy omni completion.
@@ -106,14 +115,13 @@ function! SetupNeocompleteForCppWithRtags()
         let g:neocomplete#sources#omni#input_patterns = {}
     endif
     let l:cpp_patterns='[^.[:digit:] *\t]\%(\.\|->\)\|\h\w*::'
-    let g:neocomplete#sources#omni#input_patterns.cpp = l:cpp_patterns 
+    let g:neocomplete#sources#omni#input_patterns.cpp = l:cpp_patterns
     set completeopt+=longest,menuone
 endfunction
 
 autocmd FileType cpp,c call SetupNeocompleteForCppWithRtags()
-
 ```
-Such config provides automatic calls, of omnicompletion on c and cpp entity accessors.
+Such config provides automatic calls of omnicompletion on c and cpp entity accessors.
 
 ### Current limitations
 * There is no support for overridden functions and methods
@@ -124,6 +132,8 @@ Such config provides automatic calls, of omnicompletion on c and cpp entity acce
 
 # Development
 Unit tests for some plugin functions can be found in ```tests``` directory.
-To run tests, execute:
-
+To run tests, execute (note `nose` is required for python tests):
+```
     $ vim tests/test_rtags.vim +UnitTest
+    $ nosetests tests
+```
