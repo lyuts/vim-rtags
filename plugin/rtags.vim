@@ -142,8 +142,8 @@ function! rtags#ExecuteRC(args)
         let unsaved_content = join(getline(1, line('$')), "\n")
     endif
     if exists('unsaved_content')
-        let filename = expand("%")
-        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let filename = expand("%:p")
+        let output = system(printf("%s --wait --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
         let b:rtags_sent_content = unsaved_content
     endif
 
@@ -712,8 +712,8 @@ function! rtags#ExecuteRCAsync(args, handlers)
         let unsaved_content = join(getline(1, line('$')), "\n")
     endif
     if exists('unsaved_content')
-        let filename = expand("%")
-        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let filename = expand("%:p")
+        let output = system(printf("%s --wait --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
         let b:rtags_sent_content = unsaved_content
     endif
 
