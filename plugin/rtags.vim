@@ -143,7 +143,7 @@ function! rtags#ExecuteRC(args)
     endif
     if exists('unsaved_content')
         let filename = expand("%")
-        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let output = system(printf("%s --wait --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
         let b:rtags_sent_content = unsaved_content
     endif
 
@@ -713,7 +713,7 @@ function! rtags#ExecuteRCAsync(args, handlers)
     endif
     if exists('unsaved_content')
         let filename = expand("%")
-        let output = system(printf("%s --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
+        let output = system(printf("%s --wait --unsaved-file=%s:%s -V %s", cmd, filename, strlen(unsaved_content), filename), unsaved_content)
         let b:rtags_sent_content = unsaved_content
     endif
 
