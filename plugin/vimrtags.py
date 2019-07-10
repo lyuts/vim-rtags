@@ -8,14 +8,17 @@ import tempfile
 
 import logging
 tempdir = tempfile.gettempdir()
-logging.basicConfig(filename='%s/vim-rtags-python.log' % tempdir,level=logging.DEBUG)
+file_handler = logging.FileHandler(f'{tempdir}/vim-rtags-python.log')
+logger = logging.getLogger(__name__)
+logger.addHandler(file_handler)
+logger.setLevel('DEBUG')
 
 def get_identifier_beginning():
     line = vim.eval('s:line')
     column = int(vim.eval('s:start'))
 
-    logging.debug(line)
-    logging.debug(column)
+    logger.debug(line)
+    logger.debug(column)
 
     while column >= 0 and (line[column].isalnum() or line[column] == '_'):
         column -= 1
@@ -41,7 +44,6 @@ def run_rc_command(arguments, content = None):
             out = out.decode(encoding)
         if not err is None:
             err = err.decode(encoding)
-
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         r = subprocess.Popen(
             cmdline.split(),
@@ -65,7 +67,7 @@ def run_rc_command(arguments, content = None):
         out, err = r.communicate(input=content)
 
     if r.returncode != 0:
-        logging.debug(err)
+        logger.debug(err)
         return None
 
     return out
@@ -76,7 +78,7 @@ def get_rtags_variable(name):
 
 def parse_completion_result(data):
     result = json.loads(data)
-    logging.debug(result)
+    logger.debug(result)
     completions = []
 
     for c in result['completions']:
@@ -107,7 +109,6 @@ def send_completion_request():
     prefix = vim.eval('s:prefix')
 
     for buffer in vim.buffers:
-        logging.debug(buffer.name)
         if buffer.name == filename:
             lines = [x for x in buffer]
             content = '\n'.join(lines[:line - 1] + [lines[line - 1] + prefix] + lines[line:])
@@ -142,7 +143,7 @@ def display_locations(errors, buffer):
 
 def display_diagnostics_results(data, buffer):
     data = json.loads(data)
-    logging.debug(data)
+    logger.debug(data)
 
     check_style = data['checkStyle']
     vim.command('sign unplace *')
