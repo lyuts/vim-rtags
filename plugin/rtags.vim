@@ -495,12 +495,9 @@ function! rtags#getCurrentLocation()
     return printf("%s:%s:%s", expand("%:p"), lnum, col)
 endfunction
 
-function! rtags#SymbolInfoHandler(output)
-    echo join(a:output, "\n")
-endfunction
-
 function! rtags#SymbolInfo()
-    call rtags#ExecuteThen({ '-U' : rtags#getCurrentLocation() }, [function('rtags#SymbolInfoHandler')])
+    let result = rtags#ExecuteRC({ '-U' : rtags#getCurrentLocation() })
+    echo join(result, "\n")
 endfunction
 
 function! rtags#cloneCurrentBuffer(type)
@@ -905,24 +902,26 @@ function! rtags#ProjectListHandler(output)
     endfor
     let choice = input('Choice: ')
     if choice > 0 && choice <= len(projects)
-        call rtags#ProjectOpen(projects[choice-1])
+        let project = substitute(projects[choice-1], '\s\+<=$', '', '')
+        call rtags#ProjectOpen(project)
     endif
 endfunction
 
 function! rtags#ProjectList()
-    call rtags#ExecuteThen({ '-w' : '' }, [function('rtags#ProjectListHandler')])
+    let result = rtags#ExecuteRC({ '-w' : '' })
+    call rtags#ExecuteHandlers(result, [function('rtags#ProjectListHandler')])
 endfunction
 
 function! rtags#ProjectOpen(pattern)
-    call rtags#ExecuteThen({ '-w' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-w' : a:pattern })
 endfunction
 
 function! rtags#LoadCompilationDb(pattern)
-    call rtags#ExecuteThen({ '-J' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-J' : a:pattern })
 endfunction
 
 function! rtags#ProjectClose(pattern)
-    call rtags#ExecuteThen({ '-u' : a:pattern }, [])
+    call rtags#ExecuteRC({ '-u' : a:pattern })
 endfunction
 
 function! rtags#PreprocessFileHandler(result)
